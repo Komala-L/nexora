@@ -91,6 +91,8 @@ Initially:
 - Email
 - Password
 
+Passwords are stored only as bcrypt hashes. Hashing is performed automatically by a Mongoose pre-save middleware. Plain-text passwords are never persisted.
+
 Future authentication methods may include:
 
 - Google OAuth
