@@ -35,12 +35,16 @@ backend
 │   ├── app.js
 │   ├── server.js
 │   ├── config
-│   ├── models
 │   ├── controllers
+│   ├── middleware
+│   ├── models
 │   ├── routes
 │   ├── services
-│   ├── middleware
 │   └── utils
+│
+├── docs
+│   ├── authentication
+│   └── database
 │
 ├── .env.example
 ├── package.json
@@ -58,7 +62,9 @@ PORT=5000
 NODE_ENV=development
 MONGODB_URI=
 JWT_SECRET=
-CLIENT_URL=
+JWT_ACCESS_TOKEN_EXPIRY=1d
+CLIENT_URL=http://localhost:5173
+BCRYPT_SALT_ROUNDS=10
 ```
 
 ## Installation
