@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, "Password is required"],
         minlength: 8,
+        match: [
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&^#()_\-+=])[A-Za-z\d@$!%*?&^#()_\-+=]{8,}$/,
+            "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character."
+        ],
         select: false,
     },
     profilePic: {
@@ -55,10 +59,10 @@ const userSchema = new mongoose.Schema({
         type: {
             type: String,
             enum: ["Point"],
-            default: "Point",
         },
         coordinates: {
             type: [Number],
+            default: undefined,
         }
     }
 }, {
