@@ -111,3 +111,26 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Invalid or expired refresh token");
     }
 });
+
+export const logoutUser = asyncHandler(async (req, res) => {
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $unset: {
+                refreshToken: 1,
+            },
+        }
+    );
+
+    return res
+        .clearCookie("accessToken", cookieOptions)
+        .clearCookie("refreshToken", cookieOptions)
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                "Logout successful"
+            )
+        );
+})
