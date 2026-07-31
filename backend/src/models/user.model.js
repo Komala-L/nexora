@@ -64,6 +64,10 @@ const userSchema = new mongoose.Schema({
             type: [Number],
             default: undefined,
         }
+    },
+    refreshToken: {
+        type: String,
+        default: null,
     }
 }, {
     timestamps: true
@@ -93,6 +97,14 @@ userSchema.methods.generateAccessToken = function () {
         {_id: this._id},
         process.env.JWT_SECRET,
         {expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRY}
+    );
+};
+
+userSchema.methods.generateRefreshToken = function () {
+    return jwt.sign(
+        {_id: this._id},
+        process.env.JWT_REFRESH_SECRET,
+        {expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRY}
     );
 };
 
