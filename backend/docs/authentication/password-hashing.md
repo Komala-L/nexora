@@ -14,7 +14,7 @@
 | Status | Active |
 | Review Status | Approved |
 | Author | Komala L |
-| Last Updated | 17 July 2026 |
+| Last Updated | 1 August 2026 |
 
 ---
 
@@ -179,7 +179,7 @@ The current authentication implementation intentionally accepts the following li
 - Password strength validation is limited to minimum length requirements.
 - Password reset functionality has not yet been implemented.
 - Account lockout after repeated failed login attempts is not yet available.
-- Refresh token support has not yet been introduced.
+- Device-specific refresh token management has not yet been implemented.
 
 These limitations are acceptable for the current development phase and will be addressed in future iterations.
 
@@ -192,7 +192,7 @@ The following authentication capabilities are intentionally deferred:
 - Password reset
 - Email verification
 - Multi-factor authentication (MFA)
-- Refresh token rotation
+- Device-specific session management
 - Password history
 - Strong password policy enforcement
 - Account lockout policies
@@ -210,7 +210,7 @@ This document intentionally does not cover:
 - OAuth providers
 - Session management
 
-These topics are documented separately within the Authentication module.
+These topics are documented in their respective documents within the `docs/authentication/` directory.
 
 ---
 
@@ -240,7 +240,18 @@ Externalizing the bcrypt cost factor allows future adjustments without requiring
 
 ---
 
-# 16. References
+# 16. Related Documents
+
+The following documents complement this password hashing design.
+
+- Authentication Module Overview
+- JWT Authentication
+- Refresh Token Architecture
+- Authentication Security Best Practices
+
+---
+
+# 17. References
 
 - Official bcrypt Documentation
 - OWASP Password Storage Cheat Sheet
@@ -249,7 +260,7 @@ Externalizing the bcrypt cost factor allows future adjustments without requiring
 
 ---
 
-# 17. Revision History
+# 18. Revision History
 
 | Version | Description |
 |----------|-------------|

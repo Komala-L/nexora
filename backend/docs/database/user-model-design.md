@@ -11,10 +11,10 @@
 | Module | User Management |
 | Document Type | Database Design |
 | Document Version | 0.1 |
-| Status | In Progress |
+| Status | Active |
 | Review Status | Approved |
 | Author | Komala L |
-| Last Updated | 16 July 2026 |
+| Last Updated | 1 August 2026 |
 
 ---
 
@@ -84,14 +84,15 @@ Uniquely identify a user within the system.
 
 ## Authentication
 
-Stores credentials required for login.
+Stores credentials and authentication-related information required for secure user authentication.
 
 Initially:
 
-- Email
-- Password
+Email
+Password
+Active refresh token
 
-Passwords are stored only as bcrypt hashes. Hashing is performed automatically by a Mongoose pre-save middleware. Plain-text passwords are never persisted.
+Passwords are stored only as bcrypt hashes. Refresh tokens are securely generated and rotated by the authentication service.
 
 Future authentication methods may include:
 
@@ -210,10 +211,11 @@ These modules depend on the User model as the central source of user identity.
 | name | Display name |
 | email | User login identifier |
 | password | Authentication credential |
-| profileImage | User avatar |
+| profilePic | User avatar |
 | bio | Short profile description |
 | interests | User preferences |
 | location | Geographical location |
+| refreshToken | Stores the currently active refresh token |
 | createdAt | Record creation time |
 | updatedAt | Record update time |
 
@@ -226,6 +228,7 @@ Sensitive information must never be exposed unintentionally.
 Examples:
 
 - Password should never be returned in API responses.
+- Refresh tokens should never be returned in API responses.
 - Internal authentication fields should remain private.
 - Validation should prevent invalid user data.
 
@@ -273,7 +276,6 @@ The model should validate:
 - Email format
 - Password constraints
 - Maximum bio length
-- Allowed profile image format
 
 Business rules should remain separated from database validation whenever possible.
 
@@ -291,7 +293,7 @@ The following features are intentionally postponed:
 - Phone verification
 - Google Login
 - GitHub Login
-- Two-factor authentication
+- Multi-factor authentication (MFA)
 - Last active timestamp
 - Online presence
 - Soft delete
@@ -345,7 +347,18 @@ This improves scalability and maintainability.
 
 ---
 
-# 15. Revision History
+# 15. Related Documents
+
+The following documents complement the User model design.
+
+- Authentication Module Overview
+- Password Hashing
+- JWT Authentication
+- Refresh Token Architecture
+
+---
+
+# 16. Revision History
 
 | Version | Description |
 |----------|-------------|
