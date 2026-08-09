@@ -62,8 +62,13 @@ const userSchema = new mongoose.Schema({
         },
         coordinates: {
             type: [Number],
-            default: undefined,
-        }
+            validate: {
+                validator(value) {
+                    return !value || value.length === 2;
+                },
+                message: "Coordinates must contain longitude and latitude.",
+            },
+        },
     },
     refreshToken: {
         type: String,
