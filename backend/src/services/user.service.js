@@ -1,5 +1,6 @@
 import User from "../models/user.model.js";
 import ApiError from "../utils/apiError.js";
+import { uploadImage, deleteImage } from "./cloudinary.service.js";
 
 /**
  * Get the authenticated user's profile.
@@ -51,28 +52,63 @@ export const updateProfile = async (userId, updateData) => {
 /**
  * Update the authenticated user's profile image.
  */
-export const updateProfileImage = async (userId, imageData) => {
-    const user = await User.findByIdAndUpdate(
-        userId,
-        {
-            $set: {
-                profilePic: {
-                    url: imageData.url,
-                    fileId: imageData.fileId,
-                },
-            },
-        },
-        {
-            new: true,
-            runValidators: true,
-        }
-    ).select("-password -refreshToken");
+export const updateProfileImage = async (userId, imageBuffer) => {
+    const existingUser = await User.findById(userId);
 
-    if (!user) {
+    if (!existingUser) {
         throw new ApiError(404, "User not found.");
     }
 
-    return user;
+    const oldFileId = existingUser.profilePic?.fileId;
+    const newImage = await uploadImage(imageBuffer);
+
+    try {
+        const user = await User.findByIdAndUpdate(
+            userId,
+            {
+                $set: {
+                    profilePic: {
+                        url: newImage.url,
+                        fileId: newImage.fileId,
+                    },
+                },
+            },
+            {
+                new: true,
+                runValidators: true,
+            }
+        ).select("-password -refreshToken");
+
+        if (!user) {
+            throw new ApiError(404, "User not found.");
+        }
+
+    
+        if (oldFileId) {
+            try {
+                await deleteImage(oldFileId);
+            } catch (error) {
+                logger.error("Failed to delete old Cloudinary profile image", {
+                    message: error.message,
+                    stack: error.stack,
+                });
+            }
+        }
+
+        return user;
+
+    } catch (error) {
+        try {
+            await deleteImage(newImage.fileId);
+        } catch (cleanupError) {
+            logger.error("Failed to clean up newly uploaded Cloudinary image", {
+                message: cleanupError.message,
+                stack: cleanupError.stack,
+            });
+        }
+
+        throw error;
+    }
 };
 
 /**

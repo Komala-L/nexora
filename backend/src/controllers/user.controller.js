@@ -1,6 +1,6 @@
 import ApiResponse from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { getCurrentUser, updateProfile } from "../services/user.service.js";
+import { getCurrentUser, updateProfile, updateProfileImage } from "../services/user.service.js";
 
 /**
  * Get the authenticated user's profile.
@@ -33,6 +33,36 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
                 user,
             },
             "User profile updated successfully"
+        )
+    );
+});
+
+/**
+ * Update the authenticated user's profile image.
+ */
+export const updateUserProfileImage = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json(
+            new ApiResponse(
+                400,
+                null,
+                "Profile image is required."
+            )
+        );
+    }
+
+    const user = await updateProfileImage(
+        req.user._id,
+        req.file.buffer
+    );
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                user,
+            },
+            "Profile image updated successfully."
         )
     );
 });
