@@ -1,5 +1,6 @@
 import User from "../models/user.model.js";
 import ApiError from "../utils/apiError.js";
+import logger from "../utils/logger.js";
 import { uploadImage, deleteImage } from "./cloudinary.service.js";
 
 /**
@@ -115,72 +116,36 @@ export const updateProfileImage = async (userId, imageBuffer) => {
  * Remove the authenticated user's profile image.
  */
 export const removeProfileImage = async (userId) => {
-    const user = await User.findByIdAndUpdate(
-        userId,
-        {
-            $set: {
-                profilePic: {
-                    url: null,
-                    fileId: null,
-                },
-            },
-        },
-        {
-            new: true,
-            runValidators: true,
-        }
-    ).select("-password -refreshToken");
+    const user = await User.findById(userId);
 
     if (!user) {
         throw new ApiError(404, "User not found.");
     }
 
-    return user;
-};
+    const fileId = user.profilePic?.fileId;
 
-/**
- * Update the authenticated user's location.
- */
-export const updateLocation = async (userId, coordinates) => {
-    const user = await User.findByIdAndUpdate(
-        userId,
-        {
-            $set: {
-                location: {
-                    type: "Point",
-                    coordinates,
-                },
-            },
-        },
-        {
-            new: true,
-            runValidators: true,
-        }
-    ).select("-password -refreshToken");
-
-    if (!user) {
-        throw new ApiError(404, "User not found.");
+    if (!fileId) {
+        throw new ApiError(404, "Profile image not found.");
     }
 
-    return user;
-};
+    user.profilePic = {
+        url: null,
+        fileId: null,
+    };
 
-/**
- * Search for users by name.
- */
-export const searchUsers = async (searchQuery, userId, page, limit) => {
-    const skip = (page - 1) * limit;
+    await user.save();
 
-    const users = await User.find({
-        _id: { $ne: userId },
-        name: {
-            $regex: searchQuery,
-            $options: "i",
-        },
-    })
-        .select("name profilePic bio interests")
-        .skip(skip)
-        .limit(limit);
+    try {
+        await deleteImage(fileId);
+    } catch (error) {
+        logger.error("Failed to delete profile image from Cloudinary", {
+            userId,
+            fileId,
+            message: error.message,
+            stack: error.stack,
+        });
+    }
 
-    return users;
+    return User.findById(userId)
+        .select("-password -refreshToken");
 };
