@@ -132,7 +132,9 @@ export const updateLocation = async (userId, coordinates) => {
 /**
  * Search for users by name.
  */
-export const searchUsers = async (searchQuery, userId) => {
+export const searchUsers = async (searchQuery, userId, page, limit) => {
+    const skip = (page - 1) * limit;
+
     const users = await User.find({
         _id: { $ne: userId },
         name: {
@@ -141,7 +143,8 @@ export const searchUsers = async (searchQuery, userId) => {
         },
     })
         .select("name profilePic bio interests")
-        .limit(20);
+        .skip(skip)
+        .limit(limit);
 
     return users;
 };
