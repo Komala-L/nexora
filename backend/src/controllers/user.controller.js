@@ -1,16 +1,24 @@
 import ApiResponse from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { getCurrentUser, updateProfile, updateProfileImage, removeProfileImage, } from "../services/user.service.js";
+import { 
+    getCurrentUser, 
+    updateProfile, 
+    updateProfileImage, 
+    removeProfileImage, 
+    updateLocation, 
+} from "../services/user.service.js";
 
 /**
  * Get the authenticated user's profile.
  */
 export const currentUser = asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req.user._id);
+
     return res.status(200).json(
         new ApiResponse(
             200,
             {
-                user: req.user,
+                user,
             },
             "Current user fetched successfully"
         )
@@ -80,6 +88,32 @@ export const removeUserProfileImage = asyncHandler(async (req, res) => {
                 user,
             },
             "Profile image removed successfully"
+        )
+    );
+});
+
+/**
+ * Update the authenticated user's location.
+ */
+export const updateUserLocation = asyncHandler(async (req, res) => {
+    const { longitude, latitude } = req.body;
+
+    const user = await updateLocation(
+        req.user._id,
+        [longitude, latitude]
+    );
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    gender: user.gender,
+                },
+            },
+            "Location updated successfully"
         )
     );
 });

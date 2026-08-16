@@ -10,6 +10,13 @@ const userSchema = new mongoose.Schema({
         maxlength: 40,
         trim: true,
     },
+    gender: {
+        type: String,
+        enum: ["male", "female"],
+        required: [true, "Gender is required"],
+        lowercase: true,
+        trim: true,
+    },
     email: {
         type: String,
         required: [true, "Email is required"],
@@ -70,6 +77,21 @@ const userSchema = new mongoose.Schema({
             },
         },
     },
+    discoveryLocation: {
+        type: {
+            type: String,
+            enum: ["Point"],
+        },
+        coordinates: {
+            type: [Number],
+            validate: {
+                validator(value) {
+                    return !value || value.length === 2;
+                },
+                message: "Coordinates must contain longitude and latitude.",
+            },
+        },
+    },
     refreshToken: {
         type: String,
         default: null,
@@ -80,6 +102,10 @@ const userSchema = new mongoose.Schema({
 
 userSchema.index({
     location: "2dsphere"
+});
+
+userSchema.index({
+    discoveryLocation: "2dsphere",
 });
 
 userSchema.pre("save", async function () {

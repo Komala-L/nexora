@@ -7,6 +7,16 @@ export const registerSchema = z.object({
         .min(3, "Name must be at least 3 characters long.")
         .max(40, "Name cannot exceed 40 characters."),
 
+    gender: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .pipe(
+            z.enum(["male", "female"], {
+                message: "Gender must be either male or female.",
+            })
+        ),
+
     email: z
         .string()
         .trim()

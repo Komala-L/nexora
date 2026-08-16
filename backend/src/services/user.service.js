@@ -2,12 +2,15 @@ import User from "../models/user.model.js";
 import ApiError from "../utils/apiError.js";
 import logger from "../utils/logger.js";
 import { uploadImage, deleteImage } from "./cloudinary.service.js";
+import { generateProtectedLocation } from "../utils/location.utils.js";
 
 /**
  * Get the authenticated user's profile.
  */
 export const getCurrentUser = async (userId) => {
-    const user = await User.findById(userId).select("-password -refreshToken");
+    const user = await User.findById(userId).select(
+        "-password -refreshToken -location -discoveryLocation"
+    );
 
     if (!user) {
         throw new ApiError(404, "User not found.");
@@ -145,6 +148,47 @@ export const removeProfileImage = async (userId) => {
             stack: error.stack,
         });
     }
+
+    return User.findById(userId)
+        .select("-password -refreshToken");
+};
+
+/**
+ * Update the authenticated user's location.
+ *
+ * The actual location is stored privately.
+ * Female users receive a randomized discovery location
+ * to protect their exact location.
+ */
+export const updateLocation = async (userId, coordinates) => {
+    const user = await User.findById(userId);
+
+    if (!user) {
+        throw new ApiError(404, "User not found.");
+    }
+
+    const [longitude, latitude] = coordinates;
+
+    let discoveryCoordinates = coordinates;
+
+    if (user.gender === "female") {
+        discoveryCoordinates = generateProtectedLocation(
+            longitude,
+            latitude
+        );
+    }
+
+    user.location = {
+        type: "Point",
+        coordinates,
+    };
+
+    user.discoveryLocation = {
+        type: "Point",
+        coordinates: discoveryCoordinates,
+    };
+
+    await user.save();
 
     return User.findById(userId)
         .select("-password -refreshToken");
