@@ -6,6 +6,7 @@ import {
     updateProfileImage, 
     removeProfileImage, 
     updateLocation, 
+    getNearbyUsers
 } from "../services/user.service.js";
 
 /**
@@ -114,6 +115,26 @@ export const updateUserLocation = asyncHandler(async (req, res) => {
                 },
             },
             "Location updated successfully"
+        )
+    );
+});
+
+/**
+ * Get users near the authenticated user's discovery location.
+ */
+export const nearbyUsers = asyncHandler(async (req, res) => {
+    const users = await getNearbyUsers(
+        req.user._id,
+        req.validatedQuery.limit
+    );
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                users,
+            },
+            "Nearby users fetched successfully"
         )
     );
 });

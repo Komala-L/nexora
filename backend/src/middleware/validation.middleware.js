@@ -19,4 +19,26 @@ const validate = (schema) => {
     };
 };
 
+export const validateQuery = (schema) => {
+    return (req, res, next) => {
+        try {
+            const validatedQuery = schema.parse(req.query);
+
+            req.validatedQuery = validatedQuery;
+
+            next();
+        } catch (error) {
+            if (error instanceof ZodError) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Validation failed",
+                    errors: error.issues,
+                });
+            }
+
+            next(error);
+        }
+    };
+};
+
 export default validate;

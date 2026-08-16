@@ -4,12 +4,13 @@ import {
     updateUserProfile, 
     updateUserProfileImage, 
     removeUserProfileImage, 
-    updateUserLocation 
+    updateUserLocation,
+    nearbyUsers
 } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
-import validate from "../middleware/validation.middleware.js";
+import validate, { validateQuery } from "../middleware/validation.middleware.js";
 import upload from "../middleware/upload.middleware.js";
-import { updateProfileSchema, updateLocationSchema, } from "../validations/user.validation.js";
+import { updateProfileSchema, updateLocationSchema, nearbyUsersSchema } from "../validations/user.validation.js";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.patch("/profile", verifyJWT, validate(updateProfileSchema), updateUserPro
 router.patch("/profile/image", verifyJWT, upload.single("image"), updateUserProfileImage);
 router.delete("/profile/image", verifyJWT, removeUserProfileImage);
 router.patch("/location", verifyJWT, validate(updateLocationSchema), updateUserLocation);
+router.get("/nearby", verifyJWT, validateQuery(nearbyUsersSchema), nearbyUsers);
 
 export default router;

@@ -155,10 +155,6 @@ export const removeProfileImage = async (userId) => {
 
 /**
  * Update the authenticated user's location.
- *
- * The actual location is stored privately.
- * Female users receive a randomized discovery location
- * to protect their exact location.
  */
 export const updateLocation = async (userId, coordinates) => {
     const user = await User.findById(userId);
@@ -192,4 +188,47 @@ export const updateLocation = async (userId, coordinates) => {
 
     return User.findById(userId)
         .select("-password -refreshToken");
+};
+
+/**
+ * Get users near the authenticated user's discovery location.
+ */
+export const getNearbyUsers = async (userId, limit = 10) => {
+    const currentUser = await User.findById(userId)
+        .select("discoveryLocation");
+
+    if (!currentUser) {
+        throw new ApiError(404, "User not found.");
+    }
+
+    if (
+        !currentUser.discoveryLocation ||
+        !Array.isArray(currentUser.discoveryLocation.coordinates) ||
+        currentUser.discoveryLocation.coordinates.length !== 2
+    ) {
+        throw new ApiError(
+            400,
+            "Please update your location before searching for nearby users."
+        );
+    }
+
+    const MAX_DISCOVERY_RADIUS_METERS = 10 * 1000;
+
+    const nearbyUsers = await User.find({
+        _id: { $ne: userId },
+
+        discoveryLocation: {
+            $near: {
+                $geometry: {
+                    type: "Point",
+                    coordinates: currentUser.discoveryLocation.coordinates,
+                },
+                $maxDistance: MAX_DISCOVERY_RADIUS_METERS,
+            },
+        },
+    })
+        .select("name gender profilePic bio interests")
+        .limit(limit);
+
+    return nearbyUsers;
 };

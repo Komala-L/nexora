@@ -84,3 +84,14 @@ export const searchUserSchema = z.object({
         .default(10),
 })
 .strict();
+
+/* 4. Nearby User */
+
+export const nearbyUsersSchema = z.object({
+    limit: z.coerce
+        .number()
+        .int("Limit must be an integer.")
+        .min(1, "Limit must be at least 1.")
+        .max(50, "Limit cannot exceed 50.")
+        .default(10),
+}).strict();
