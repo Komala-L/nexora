@@ -10,15 +10,15 @@
 | Project | Nexora |
 | Module | User Management |
 | Document Type | Feature Design |
-| Document Version | 0.1 |
+| Document Version | 0.2 |
 | Status | Active |
 | Review Status | Approved |
 | Author | Komala L |
-| Last Updated | 4 August 2026 |
+| Last Updated | 17 August 2026 |
 
 ---
 
-## Planned Component Structure
+## Component Structure
 
 | Component | Location |
 |----------|----------|
@@ -27,7 +27,7 @@
 | User Service | `src/services/user.service.js` |
 | User Validation | `src/validations/user.validation.js` |
 | Multer Configuration | `src/middleware/multer.middleware.js` |
-| Image Storage Utility | `src/utils/imagekit.js` |
+| Image Storage Utility | `src/utils/cloudinary.js` |
 | User Model | `src/models/user.model.js` |
 
 ---
@@ -36,9 +36,11 @@
 
 The Profile Image Management feature allows authenticated users to upload and update their profile picture.
 
-Rather than storing image files directly inside the database, Nexora stores images using an external cloud storage provider and persists only the image URL in the user document.
+Rather than storing image files directly inside the database, Nexora stores profile images using Cloudinary and persists the required image metadata within the user document.
 
-This approach improves scalability, performance, and maintainability while reducing database storage requirements.
+The stored metadata includes the Cloudinary image URL and file identifier. The file identifier allows Nexora to identify the stored asset when the image needs to be replaced or removed.
+
+This approach improves scalability, performance, and maintainability while keeping binary image data outside MongoDB.
 
 ---
 
@@ -56,13 +58,12 @@ The profile image management feature is designed to:
 
 # 3. Supported Operations
 
-The planned implementation supports the following operation.
+The implemented feature supports the following operations.
 
-| Operation | Description |
-|----------|-------------|
-| Upload Profile Image | Upload or replace the authenticated user's profile image |
-
-Future operations may include image deletion and cropping.
+| Operation | Method | Endpoint | Description |
+|----------|--------|----------|-------------|
+| Upload Profile Image | PATCH | `/api/v1/users/profile/image` | Upload or replace the authenticated user's profile image |
+| Remove Profile Image | DELETE | `/api/v1/users/profile/image` | Remove the authenticated user's profile image |
 
 ---
 
@@ -70,7 +71,7 @@ Future operations may include image deletion and cropping.
 
 The profile image upload follows the workflow below.
 
-```
+```text
 Authenticated User
 
 ↓
@@ -87,11 +88,11 @@ Multer Validation
 
 ↓
 
-Image Upload
+Cloudinary Upload
 
 ↓
 
-Receive Image URL
+Receive Cloudinary URL + File ID
 
 ↓
 
@@ -101,26 +102,32 @@ Update User Profile
 
 Return Updated Profile
 ```
+Multer handles the incoming multipart file and validates the upload before the image is sent to Cloudinary.
 
-Only the generated image URL is stored in the database.
+After a successful Cloudinary upload, Nexora stores the returned image URL and file identifier in the user's profilePic field.
 
 ---
 
 # 5. Image Storage Strategy
 
-Nexora stores profile images using ImageKit.
+Nexora stores profile images using Cloudinary.
 
-The uploaded image is stored within ImageKit's cloud storage infrastructure.
+The uploaded image is stored in Cloudinary under the Nexora profile-image storage path.
 
-MongoDB stores only the generated ImageKit URL associated with the uploaded image.
+MongoDB stores only the metadata required to reference the image:
 
-Example:
-
-```text
-https://ik.imagekit.io/example/profile-image.jpg
+```json
+{
+    "profilePic": {
+        "url": "https://res.cloudinary.com/...",
+        "fileId": "nexora/profile-images/..."
+    }
+}
 ```
 
 The database never stores binary image data.
+
+The url is used to retrieve the image, while the fileId is used to identify the Cloudinary asset when the image needs to be replaced or deleted.
 
 ---
 
@@ -139,18 +146,19 @@ Using dedicated object storage provides several advantages:
 
 ---
 
-# 7. Why ImageKit?
+# 7. Why Cloudinary?
 
-ImageKit was selected because it provides:
+Cloudinary was selected because it provides:
 
-- Cloud image storage.
-- Global CDN delivery.
-- Automatic image optimization.
-- URL-based image transformations.
-- Simple Node.js integration.
-- A generous free tier suitable for development, educational projects, and portfolio applications.
+- Cloud-based image storage.
+- CDN-based image delivery.
+- Image optimization and transformation capabilities.
+- Secure API-based asset management.
+- Node.js integration.
+- Asset deletion through the Cloudinary API.
+- A suitable free tier for development and educational projects.
 
-The storage layer has been designed so that ImageKit may be replaced with another provider in future versions if required.
+The storage layer is isolated from the rest of the application so that the provider can be replaced in the future if required.
 
 ---
 
@@ -171,73 +179,133 @@ Invalid uploads are rejected before reaching the storage provider.
 
 # 9. Image Replacement
 
-Uploading a new profile image replaces the previously stored image reference.
+Uploading a new profile image replaces the authenticated user's existing profile image.
 
-The authenticated user's profile is updated with the newly generated image URL.
+When an existing profile image is present, Nexora uses the stored Cloudinary `fileId` to identify the previous asset.
+
+The previous Cloudinary asset is removed before or as part of the replacement workflow, preventing obsolete profile images from accumulating in cloud storage.
+
+After the new image is uploaded successfully, MongoDB is updated with the new:
+
+- Cloudinary image URL.
+- Cloudinary file identifier.
 
 Only one active profile image is associated with each user.
 
-Future versions may automatically remove previously stored images from cloud storage.
+---
 
-This prevents unused images from accumulating in cloud storage.
+# 10. Image Deletion
+
+Authenticated users can remove their current profile image using:
+
+```http
+DELETE /api/v1/users/profile/image
+
+The deletion workflow is:
+
+Authenticated User
+
+↓
+
+Delete Profile Image Request
+
+↓
+
+Find User
+
+↓
+
+Check Existing Cloudinary File ID
+
+↓
+
+Delete Cloudinary Asset
+
+↓
+
+Clear profilePic.url
+
+↓
+
+Clear profilePic.fileId
+
+↓
+
+Return Updated User
+```
+
+After successful deletion, the user's profile contains:
+
+```json
+{
+    "profilePic": {
+        "url": null,
+        "fileId": null
+    }
+}
+```
+
+If the user does not currently have a profile image, the operation is handled without attempting to delete a nonexistent Cloudinary asset.
 
 ---
 
-# 10. Security Considerations
+# 11. Security Considerations
 
 The profile image implementation follows these security principles.
 
-- Authentication is required.
-- Uploaded files are validated.
+- Authentication is required for profile image operations.
+- Uploaded files are validated before storage.
 - Arbitrary file types are rejected.
 - Images are stored outside the application server.
-- Database stores only image URLs.
-- Image upload logic remains isolated within the service layer.
+- Binary image data is never stored in MongoDB.
+- Cloudinary credentials remain server-side and are never exposed to clients.
+- Cloudinary file identifiers are stored for controlled asset management.
 - Uploaded filenames are not trusted directly.
+- Only the authenticated user can modify or remove their own profile image.
+- Image upload and deletion logic remains isolated within the service layer.
 
 ---
 
-# 11. Assumptions
+# 12. Assumptions
 
 The current implementation assumes:
 
-- Users are authenticated before uploading images.
+- Users are authenticated before uploading or removing images.
 - One profile image exists per user.
-- Images are publicly accessible through ImageKit URLs.
-- Cloud storage credentials remain confidential.
+- Profile images are delivered through Cloudinary URLs.
+- Cloudinary credentials remain confidential.
+- MongoDB stores Cloudinary image metadata rather than binary image data.
 
 ---
 
-# 12. Known Limitations
+# 13. Known Limitations
 
 The current implementation intentionally accepts the following limitations.
 
-- Image deletion is not yet implemented.
 - Image cropping is not supported.
 - Multiple profile images are not supported.
-- Image compression settings are not configurable.
+- Image compression settings are not configurable by users.
 - Upload progress tracking is not implemented.
-
-These limitations are acceptable for the current development phase.
+- Advanced image moderation is not implemented.
 
 ---
 
-# 13. Future Improvements
+# 14. Future Improvements
 
 The profile image feature may be extended with:
 
-- Automatic deletion of replaced images.
 - Image cropping.
-- Image resizing.
+- Image resizing and transformation presets.
 - Multiple profile pictures.
 - Cover images.
 - Image moderation.
-- AWS S3 storage adapter.
-- Cloudinary storage adapter.
+- Advanced upload validation.
+- Upload progress tracking.
+- Additional storage-provider adapters if required.
 
 ---
 
-# 14. Out of Scope
+# 15. Out of Scope
 
 This document intentionally does not cover:
 
@@ -268,9 +336,13 @@ Image URLs are lightweight references that allow applications to retrieve images
 
 ---
 
-## Why choose ImageKit?
+## Why choose Cloudinary?
 
-ImageKit provides cloud storage, global CDN delivery, automatic optimization, and simple integration while allowing the storage layer to remain replaceable in future versions.
+Cloudinary provides cloud image storage, CDN delivery, image transformation capabilities, and API-based asset management.
+
+It also provides the functionality required by Nexora to upload, replace, and delete profile images while keeping binary files outside MongoDB.
+
+The storage integration is isolated within the backend so that the provider can be changed without significantly affecting the rest of the User Management module.
 
 ---
 
@@ -282,7 +354,7 @@ Early validation prevents invalid files from reaching the storage provider, redu
 
 # 16. References
 
-- ImageKit Documentation
+- Cloudinary Documentation
 - Multer Documentation
 - MongoDB Documentation
 - Mongoose Documentation
@@ -296,3 +368,4 @@ Early validation prevents invalid files from reaching the storage provider, redu
 | Version | Description |
 |----------|-------------|
 | 0.1 | Initial Profile Image Management Design |
+| 0.2 | Updated documentation to reflect the completed Cloudinary integration, profile image replacement, image deletion, Cloudinary file identifiers, and current upload security behavior |

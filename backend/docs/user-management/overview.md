@@ -74,18 +74,20 @@ Authentication, authorization, and session management remain outside the scope o
 
 # 4. Module APIs
 
-The planned REST API includes the following endpoints.
+The User Management module currently provides the following endpoints.
 
 | Method | Endpoint | Description |
 |---------|----------|-------------|
-| GET | `/api/users/me` | Retrieve the authenticated user's profile |
-| PATCH | `/api/users/me` | Update profile information |
-| PATCH | `/api/users/profile-image` | Upload or update profile image |
-| PATCH | `/api/users/location` | Update user location |
-| GET | `/api/users/search` | Search registered users |
-| GET | `/api/users/:id` | Retrieve a public user profile |
+| GET | `/api/v1/users/me` | Retrieve the authenticated user's profile |
+| PATCH | `/api/v1/users/profile` | Update authenticated user's profile information |
+| PATCH | `/api/v1/users/profile/image` | Upload or update the authenticated user's profile image |
+| DELETE | `/api/v1/users/profile/image` | Remove the authenticated user's profile image |
+| PATCH | `/api/v1/users/location` | Update the authenticated user's location |
+| GET | `/api/v1/users/nearby` | Retrieve nearby users within the configured discovery radius |
 
-The available endpoints may expand as additional social networking features are introduced.
+All protected User Management endpoints require successful authentication.
+
+The nearby-user discovery API uses protected discovery locations and does not expose users' exact coordinates or exact distances.
 
 ---
 
@@ -144,7 +146,7 @@ This separation improves maintainability, scalability, and testability.
 
 - MongoDB
 - Mongoose
-- ImageKit
+- Cloudinary
 - Multer
 
 ## Internal Dependencies
@@ -160,15 +162,22 @@ The module assumes requests have already been authenticated before user-specific
 
 # 7. Security Considerations
 
-The User Management module follows several security principles.
+The User Management module follows several security and privacy principles.
 
 - Authentication is required for protected endpoints.
 - Users may modify only their own profile.
 - Sensitive authentication fields remain protected.
-- Uploaded profile images are validated.
+- Passwords and refresh tokens are never exposed through User Management responses.
+- Uploaded profile images are validated before processing.
+- Profile images are stored externally using Cloudinary rather than directly in MongoDB.
 - User location data is validated before persistence.
+- Exact user locations are never exposed through the nearby-user discovery API.
+- Nearby-user discovery uses a separate `discoveryLocation` rather than exposing or querying against the user's private location.
+- Female users use a randomized protected discovery location to reduce the possibility of determining their exact physical location.
+- Nearby-user discovery is limited to a maximum configured radius.
+- Exact distance between users is not returned to clients.
 - Business logic remains isolated from the HTTP layer through the service architecture.
-- Sensitive account information is never exposed through public APIs.
+- Public APIs expose only fields required for the corresponding operation.
 
 ---
 
@@ -178,8 +187,13 @@ The current implementation assumes:
 
 - Users are authenticated before accessing protected endpoints.
 - Every user owns a single profile.
-- Profile images are stored using an external storage provider.
-- User locations follow the GeoJSON specification.
+- Profile images are stored using Cloudinary.
+- Profile image metadata contains the Cloudinary asset URL and file identifier.
+- User locations follow the GeoJSON Point specification.
+- MongoDB `2dsphere` indexes are used for geospatial queries.
+- A user's actual location is treated as private information.
+- Nearby-user discovery uses a protected `discoveryLocation`.
+- Female users receive a randomized discovery location to provide additional location privacy.
 - Authentication is managed independently by the Authentication module.
 
 ---
@@ -191,10 +205,11 @@ The current implementation intentionally accepts the following limitations.
 - Multiple profile images are not supported.
 - Username support has not yet been implemented.
 - Profile privacy settings are not available.
-- Image cropping is not implemented.
 - Advanced search filters are not currently supported.
-
-These limitations are acceptable for the current development phase.
+- Image cropping is not implemented.
+- Nearby-user discovery currently uses a fixed maximum discovery radius.
+- Discovery location randomization is currently applied according to the implemented gender-based privacy rules.
+- Fine-grained user-controlled location privacy settings have not yet been implemented.
 
 ---
 
@@ -205,7 +220,7 @@ The User Management module may be extended with:
 - Username support.
 - Cover images.
 - Profile privacy settings.
-- Location privacy controls.
+- User-configurable location privacy settings.
 - Verification badges.
 - Social media links.
 - Online presence.
@@ -246,7 +261,11 @@ Separating these responsibilities improves maintainability and follows the princ
 
 ## Why store profile images externally?
 
-Profile images are stored using an external object storage provider to reduce database size, improve scalability, and enable efficient image delivery through a Content Delivery Network (CDN).
+Profile images are stored using Cloudinary rather than directly in MongoDB.
+
+This keeps binary image data out of the database, reduces database storage requirements, and provides optimized image delivery through Cloudinary's CDN and transformation capabilities.
+
+MongoDB stores only the image metadata required by Nexora, including the Cloudinary asset URL and file identifier.
 
 ---
 
@@ -255,6 +274,32 @@ Profile images are stored using an external object storage provider to reduce da
 GeoJSON is the standard geospatial format supported by MongoDB.
 
 Using GeoJSON enables efficient geospatial indexing and radius-based queries required for Nexora's nearby user discovery feature.
+
+---
+
+## Why use a separate discoveryLocation?
+
+Nexora stores both the user's actual location and a protected `discoveryLocation`.
+
+The `location` field represents the user's actual geographic position and is treated as private information.
+
+The `discoveryLocation` field is used for location-based user discovery. This prevents the nearby-user feature from directly exposing or relying on the user's exact physical location.
+
+For female users, the discovery location is randomized around the actual location within the configured protection range. This allows nearby discovery to remain functional while making it significantly harder for another user to determine the exact physical location.
+
+The nearby-user API returns profile information only and does not expose either `location`, `discoveryLocation`, or the exact distance between users.
+
+---
+
+## Why limit nearby-user discovery to a maximum radius?
+
+Nearby-user discovery uses a maximum search radius to ensure that the API returns users who are meaningfully nearby rather than simply returning the closest users regardless of their actual distance.
+
+The current implementation uses a maximum discovery radius of 10 km.
+
+MongoDB performs the geospatial query using the `2dsphere` index and the protected `discoveryLocation` field.
+
+The API does not return the calculated distance to the client.
 
 ---
 
@@ -278,7 +323,7 @@ This improves modularity, simplifies testing, and promotes cleaner application a
 
 - MongoDB Documentation
 - Mongoose Documentation
-- ImageKit Documentation
+- Cloudinary Documentation
 - Multer Documentation
 - GeoJSON Specification
 
@@ -289,3 +334,4 @@ This improves modularity, simplifies testing, and promotes cleaner application a
 | Version | Description |
 |----------|-------------|
 | 0.1 | Initial User Management Module Overview |
+| 0.2 | Updated documentation to reflect completed implementation, Cloudinary integration, profile image removal, protected discovery locations, randomized female-user discovery locations, and nearby-user discovery with a 10 km maximum radius |

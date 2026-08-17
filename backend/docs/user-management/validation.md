@@ -1,5 +1,5 @@
-> This document describes the validation strategy implemented by the User Management module.
-> It explains the validation rules, middleware responsibilities, business constraints, and design decisions used to ensure data integrity before user information reaches the business logic.
+> This document describes the validation strategy implemented within the User Management module.
+> It explains the validation rules, middleware responsibilities, business constraints, and design decisions used to ensure user-management data is validated before reaching the business logic.
 
 # User Validation
 
@@ -10,15 +10,15 @@
 | Project | Nexora |
 | Module | User Management |
 | Document Type | Validation Design |
-| Document Version | 0.1 |
+| Document Version | 0.2 |
 | Status | Active |
 | Review Status | Approved |
 | Author | Komala L |
-| Last Updated | 4 August 2026 |
+| Last Updated | 17 August 2026 |
 
 ---
 
-## Planned Component Structure
+## Component Structure
 
 | Component | Location |
 |----------|----------|
@@ -30,11 +30,11 @@
 
 # 1. Overview
 
-Validation is the first line of defense within the User Management module.
+Validation is an important defensive layer within the User Management module.
 
-Before any request reaches the controller or service layer, incoming data is validated to ensure that it satisfies the application's business rules and data integrity requirements.
+Incoming user-management data is validated before it reaches the relevant controller or service layer. Validation ensures that incoming data satisfies the expected structure, data types, and business constraints.
 
-Early validation prevents invalid or malicious input from reaching the database while reducing unnecessary processing.
+Early validation prevents invalid data from reaching the database, reduces unnecessary processing, and improves application reliability.
 
 ---
 
@@ -60,15 +60,11 @@ Client Request
 
 ↓
 
-Validation Middleware
+Validation Middleware / File Validation
 
 ↓
 
 Request Validation
-
-↓
-
-Validation Success
 
 ↓
 
@@ -80,7 +76,7 @@ Service
 
 ↓
 
-Database
+Database / External Storage
 ```
 
 Requests that fail validation are rejected immediately without executing business logic.
@@ -89,17 +85,16 @@ Requests that fail validation are rejected immediately without executing busines
 
 # 4. Name Validation
 
-User names are validated before profile updates.
+User names are validated before being persisted during profile updates.
 
 Validation includes:
 
-- Required field verification (when applicable).
 - String data type validation.
 - Minimum length requirements.
 - Maximum length requirements.
-- Removal of unnecessary whitespace.
+- Trimming unnecessary whitespace.
 
-The validation ensures user names remain readable and consistent.
+Name validation ensures user names remain consistent and within the supported profile constraints.
 
 ---
 
@@ -125,16 +120,18 @@ Validation includes:
 
 - Array validation.
 - String element verification.
-- Duplicate handling (future enhancement).
-- Maximum item limits (future enhancement).
+- Maximum interest limit.
+- Optional interest handling.
 
-Valid interests improve future recommendation capabilities.
+A user may have a maximum of 12 interests.
+
+Duplicate interest detection is not currently implemented and may be introduced as a future enhancement.
 
 ---
 
 # 7. Profile Image Validation
 
-Uploaded profile images are validated before reaching the storage provider.
+Uploaded profile images are validated before reaching the external image storage provider.
 
 Validation includes:
 
@@ -142,6 +139,8 @@ Validation includes:
 - Supported MIME type.
 - Maximum file size.
 - Valid image format.
+
+Multer handles the incoming multipart file processing and configured upload restrictions.
 
 Invalid uploads are rejected before cloud storage processing.
 
@@ -158,21 +157,26 @@ Validation includes:
 - Numeric value validation.
 - Valid coordinate ranges.
 - GeoJSON structure validation.
+- Coordinate ordering using `[longitude, latitude]`.
 
 Only valid geographical coordinates are accepted.
+
+The backend generates the protected `discoveryLocation`; clients do not directly control the discovery coordinates.
 
 ---
 
 # 9. Middleware Responsibilities
 
-The validation middleware is responsible for:
+The validation layer is responsible for:
 
-- Executing validation rules.
+- Executing request validation rules.
 - Detecting invalid requests.
 - Returning standardized validation responses.
 - Preventing invalid requests from reaching controllers.
 
-Business logic assumes validation has already succeeded.
+File-upload middleware is responsible for validating and processing uploaded files before they reach the image-storage logic.
+
+Business logic may perform additional domain-specific checks where required.
 
 ---
 
@@ -188,8 +192,9 @@ Typical validation errors include:
 - Unsupported file types.
 - Invalid coordinate values.
 - Invalid request parameters.
+- Values exceeding supported limits.
 
-The middleware avoids exposing internal implementation details.
+The validation layer avoids exposing internal implementation details.
 
 ---
 
@@ -210,18 +215,18 @@ Validation acts as an important defensive layer before business logic execution.
 
 # 12. Assumptions
 
-The planned implementation assumes:
+The current implementation assumes:
 
-- Validation executes before every protected operation.
+- Validation executes before user-management operations that accept user-controlled input.
 - Requests use the expected API format.
-- Controllers receive already validated data.
-- Business logic performs additional domain-specific checks when necessary.
+- Controllers receive validated request data.
+- Services perform additional domain-specific checks when necessary.
 
 ---
 
 # 13. Known Limitations
 
-The planned implementation intentionally accepts the following limitations.
+The current implementation intentionally accepts the following limitations.
 
 - Advanced profanity filtering is not implemented.
 - Duplicate interest detection is not available.
@@ -238,7 +243,7 @@ The validation system may be extended with:
 
 - Username validation.
 - Stronger profile content validation.
-- Duplicate interest removal.
+- Duplicate interest detection.
 - Automatic image moderation.
 - Profanity detection.
 - AI-assisted content validation.
@@ -271,7 +276,9 @@ Early validation prevents invalid requests from reaching business logic, reducin
 
 ## Why centralize validation?
 
-Keeping validation logic centralized improves consistency, reduces code duplication, and simplifies future maintenance.
+Keeping request validation rules separate from controllers and services improves consistency, reduces code duplication, and simplifies future maintenance.
+
+The validation layer is responsible for request-level validation, while domain-specific business rules remain within the service layer where appropriate.
 
 ---
 
@@ -293,8 +300,8 @@ Separating these responsibilities follows the principle of separation of concern
 
 # 17. References
 
+- Zod Documentation
 - Express.js Documentation
-- express-validator Documentation
 - Multer Documentation
 - MongoDB Documentation
 - Mongoose Documentation
@@ -307,3 +314,4 @@ Separating these responsibilities follows the principle of separation of concern
 | Version | Description |
 |----------|-------------|
 | 0.1 | Initial User Validation Design |
+| 0.2 | Updated validation documentation to reflect implemented profile, image, interest, and location validation |

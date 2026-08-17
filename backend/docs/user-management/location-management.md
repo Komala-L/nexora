@@ -10,15 +10,15 @@
 | Project | Nexora |
 | Module | User Management |
 | Document Type | Feature Design |
-| Document Version | 0.1 |
+| Document Version | 0.2 |
 | Status | Active |
 | Review Status | Approved |
 | Author | Komala L |
-| Last Updated | 4 August 2026 |
+| Last Updated | 17 August 2026 |
 
 ---
 
-## Planned Component Structure
+## Component Structure
 
 | Component | Location |
 |----------|----------|
@@ -34,9 +34,16 @@
 
 The Location Management feature allows authenticated users to update and maintain their current geographical location.
 
-Location data serves as the foundation for Nexora's nearby user discovery feature. Every authenticated user may update their latest location, which is stored using MongoDB's GeoJSON format to support efficient geospatial queries.
+Location data serves as the foundation for Nexora's nearby user discovery feature. User locations are stored using MongoDB's GeoJSON format and indexed using a `2dsphere` index to support efficient geospatial queries.
 
-Only the user's most recent location is maintained.
+Nexora maintains two location representations:
+
+- `location` — the user's actual geographical coordinates.
+- `discoveryLocation` — the coordinates used for nearby-user discovery.
+
+For users whose location requires additional privacy protection, the discovery location is intentionally obfuscated so that other users cannot determine their exact geographical position.
+
+The actual location remains available internally for accurate application functionality, while the protected discovery location is used when performing location-based discovery.
 
 ---
 
@@ -45,16 +52,18 @@ Only the user's most recent location is maintained.
 The location management feature is designed to:
 
 - Store each user's current geographical location.
+- Maintain a protected discovery location when required.
 - Support efficient nearby user discovery.
 - Enable MongoDB geospatial queries.
-- Maintain a standardized location format.
+- Maintain a standardized GeoJSON location format.
+- Protect users from exposing their exact geographical location.
 - Support future location-based social features.
 
 ---
 
 # 3. Supported Operations
 
-The planned implementation supports the following operation.
+The implemented feature supports the following operation.
 
 | Operation | Description |
 |----------|-------------|
@@ -68,7 +77,7 @@ Future versions may support additional location-related features.
 
 The location update process follows the workflow below.
 
-```
+```text
 Authenticated User
 
 ↓
@@ -89,7 +98,11 @@ Request Validation
 
 ↓
 
-Convert to GeoJSON
+Store Actual Location
+
+↓
+
+Generate Protected Discovery Location
 
 ↓
 
@@ -99,16 +112,21 @@ Update User Document
 
 Return Updated Profile
 ```
+The actual coordinates are stored in the location field.
 
-Only the latest location is stored.
+For users requiring location protection, a randomized discoveryLocation is generated from the actual location.
+
+The discovery location is then used for nearby-user queries so that the user's exact geographical position is not directly exposed through location-based discovery.
 
 ---
 
 # 5. Location Storage Format
 
-Nexora stores user locations using MongoDB's GeoJSON Point format.
+Nexora stores geographical information using MongoDB's GeoJSON `Point` format.
 
-Example:
+Each user may contain two location fields:
+
+### Actual Location
 
 ```json
 {
@@ -119,18 +137,51 @@ Example:
     ]
 }
 ```
+### Discovery Location
+
+```json
+{
+    "type": "Point",
+    "coordinates": [
+        77.5722,
+        12.9896
+    ]
+}
+```
 
 Coordinates are stored in the following order:
 
 ```
 [ longitude, latitude ]
 ```
+The location field represents the user's actual coordinates.
 
-This ordering follows the GeoJSON specification used by MongoDB.
+The discoveryLocation field represents the coordinates used for nearby-user discovery and may be intentionally offset to provide location privacy.
 
 ---
 
-# 6. Why GeoJSON?
+# 6. Location Privacy and Obfuscation
+
+Nexora does not expose a protected user's exact geographical location during nearby-user discovery.
+
+For users requiring additional location privacy, the system generates a randomized discovery location around the user's actual coordinates.
+
+The generated offset is intentionally randomized so that repeated observations do not reveal a predictable pattern.
+
+The protection mechanism is designed so that:
+
+- The actual location remains stored internally.
+- The discovery location is different from the actual location when protection is required.
+- The offset is randomized for each user.
+- No fixed offset pattern is used.
+- Nearby-user discovery uses the protected discovery location.
+- Exact geographical coordinates are not returned to other users.
+
+This approach provides a balance between location-based discovery and user privacy.
+
+---
+
+# 7. Why GeoJSON?
 
 GeoJSON is the standard location format supported by MongoDB for geospatial data.
 
@@ -146,7 +197,7 @@ GeoJSON allows Nexora to efficiently identify nearby users without requiring com
 
 ---
 
-# 7. Geospatial Indexing
+# 8. Geospatial Indexing
 
 The location field is indexed using MongoDB's `2dsphere` index.
 
@@ -161,22 +212,24 @@ Without a geospatial index, nearby user queries would require scanning every use
 
 ---
 
-# 8. Nearby User Dependency
+# 9. Nearby User Dependency
 
 Nearby User Discovery depends directly on the Location Management feature.
 
-The location stored in each user profile will later be used to:
+The `discoveryLocation` stored for each user is used to:
 
 - Find nearby users.
-- Calculate distances.
-- Filter users within a specified radius.
-- Support future location-based recommendations.
+- Perform geospatial queries.
+- Filter users within the configured discovery radius.
+- Support location-based recommendations.
 
-Accurate location management is therefore a prerequisite for Nexora's primary application feature.
+Nearby-user queries operate on `discoveryLocation` rather than directly exposing the user's actual `location`.
+
+This allows Nexora to provide location-based discovery while maintaining location privacy.
 
 ---
 
-# 9. Validation Strategy
+# 10. Validation Strategy
 
 Every location update is validated before persistence.
 
@@ -187,35 +240,44 @@ Validation includes:
 - GeoJSON structure validation.
 - Required coordinate verification.
 - Coordinate data type validation.
+- Valid coordinate ordering.
 
 Invalid requests are rejected before updating the database.
 
+Protected discovery coordinates are generated by the backend rather than accepted directly from the client.
+
 ---
 
-# 10. Security Considerations
+# 11. Security Considerations
 
 The location management feature follows these security principles.
 
 - Only authenticated users may update their own location.
 - Invalid coordinates are rejected.
-- User locations are never modified by other users.
-- Internal geospatial processing remains hidden from clients.
+- Users cannot directly modify another user's location.
+- Actual location data remains under backend control.
+- Discovery locations are generated by the backend.
+- Clients cannot directly submit a custom discovery location.
+- Exact location coordinates are not exposed through nearby-user discovery.
+- Geospatial processing remains hidden from clients.
 - Location updates occur only through authorized API endpoints.
 
 ---
 
-# 11. Assumptions
+# 12. Assumptions
 
 The current implementation assumes:
 
 - Users grant location permission to the client application.
-- Every user has only one active location.
-- New location updates replace previous coordinates.
+- Every user has one active actual location.
+- New location updates replace the previous actual coordinates.
 - Coordinates are supplied by the client application.
+- Discovery coordinates are generated by the backend.
+- Nearby-user discovery operates using `discoveryLocation`.
 
 ---
 
-# 12. Known Limitations
+# 13. Known Limitations
 
 The current implementation intentionally accepts the following limitations.
 
@@ -224,13 +286,12 @@ The current implementation intentionally accepts the following limitations.
 - Manual location selection is not available.
 - Distance caching has not been implemented.
 - Reverse geocoding is not supported.
-- Location privacy protection has not yet been implemented.
-
-These limitations are acceptable for the current development phase.
+- Advanced user-controlled location privacy settings are not available.
+- Live location sharing is not implemented.
 
 ---
 
-# 13. Future Improvements
+# 14. Future Improvements
 
 The location management feature may be extended with:
 
@@ -241,12 +302,13 @@ The location management feature may be extended with:
 - Automatic background updates.
 - Live location sharing.
 - Distance caching.
-- Privacy controls for location visibility.
-- Location obfuscation for privacy protection.
+- User-configurable location privacy controls.
+- Configurable discovery radius.
+- More advanced location obfuscation strategies.
 
 ---
 
-# 14. Out of Scope
+# 15. Out of Scope
 
 This document intentionally does not cover:
 
@@ -260,7 +322,7 @@ These topics are documented separately within their respective modules.
 
 ---
 
-# 15. Design Decisions
+# 1.6 Design Decisions
 
 ## Why store only the latest location?
 
@@ -296,11 +358,36 @@ Separating these responsibilities improves maintainability and follows the princ
 
 ## Why separate location storage from location privacy?
 
-Location Management is responsible for storing accurate geographical coordinates.
+Location Management is responsible for maintaining accurate geographical coordinates.
 
-Location privacy is applied later by the Nearby User Discovery module before location information is shared with other users.
+Location privacy is applied when generating the discovery location used by nearby-user discovery.
 
-Separating storage from privacy ensures accurate geospatial queries while protecting users from exposing their exact location.
+Keeping the actual location separate from the protected discovery location allows Nexora to maintain accurate internal geospatial data while preventing other users from determining a protected user's exact location.
+
+---
+
+## Why maintain both `location` and `discoveryLocation`?
+
+The actual location is required internally for maintaining accurate geographical information.
+
+However, using the exact location directly for discovery could compromise user privacy.
+
+Nexora therefore maintains:
+
+- `location` for the user's actual coordinates.
+- `discoveryLocation` for privacy-aware nearby-user discovery.
+
+This separation allows the application to preserve accurate internal location data while using protected coordinates for social discovery.
+
+---
+
+## Why randomize the discovery location?
+
+Using a fixed offset would create a predictable pattern that could potentially be used to estimate a user's actual location.
+
+Nexora therefore generates a randomized offset for protected discovery locations.
+
+The randomized approach makes the protection less predictable while still allowing the user to participate in nearby-user discovery.
 
 ---
 
@@ -319,3 +406,4 @@ Separating storage from privacy ensures accurate geospatial queries while protec
 | Version | Description |
 |----------|-------------|
 | 0.1 | Initial Location Management Design |
+| 0.2 | Updated documentation to reflect the implemented location API, GeoJSON storage, discoveryLocation, geospatial discovery, and randomized location protection |

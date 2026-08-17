@@ -1,5 +1,5 @@
-> This document describes the public profile functionality implemented by Nexora.
-> It explains how authenticated users view other users' profiles, the information exposed publicly, privacy considerations, and the design decisions followed by the User Management module.
+> This document describes the planned public profile functionality for Nexora.
+> It explains how authenticated users will view other users' profiles, the information intended to be exposed publicly, privacy considerations, and the design decisions planned for the User Management module.
 
 # Public Profile
 
@@ -134,7 +134,7 @@ Protecting these fields prevents accidental exposure of sensitive user informati
 
 # 7. Validation Strategy
 
-Every public profile request is validated before querying the database.
+Public profile requests will be validated before querying the database.
 
 Validation includes:
 
@@ -148,7 +148,7 @@ Invalid requests are rejected before business logic execution.
 
 # 8. Security Considerations
 
-The public profile feature follows these security principles.
+The planned public profile feature will follow these security principles.
 
 - Authentication is required.
 - Only public profile information is returned.
@@ -160,18 +160,21 @@ The public profile feature follows these security principles.
 
 # 9. Privacy Considerations
 
-The current implementation follows a public profile model.
+The planned implementation follows a public profile model.
 
 Users can view basic profile information belonging to other registered users.
 
 Future versions may introduce configurable privacy settings allowing users to control profile visibility.
 
-Future privacy settings may also allow users to control the visibility of profile attributes such as bio, interests, profile image, and location.
+Future privacy settings may allow users to control the visibility of profile attributes such as bio, interests, and profile image.
+
+Location privacy is handled separately by the Location Management and Nearby User Discovery features and is not exposed as part of a public profile.
+
 ---
 
 # 10. Assumptions
 
-The current implementation assumes:
+The planned implementation assumes:
 
 - Users are authenticated before viewing profiles.
 - Every user has one public profile.
@@ -182,7 +185,7 @@ The current implementation assumes:
 
 # 11. Known Limitations
 
-The current implementation intentionally accepts the following limitations.
+The planned implementation intentionally accepts the following limitations.
 
 - Profile privacy settings are not available.
 - Friend-only visibility is not supported.

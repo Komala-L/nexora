@@ -1,5 +1,5 @@
-> This document describes the user search functionality implemented by Nexora.
-> It explains the search workflow, filtering strategy, validation rules, performance considerations, and design decisions used for searching users within the platform.
+> This document describes the planned user search functionality for Nexora.
+> It explains the search workflow, filtering strategy, validation rules, performance considerations, and design decisions planned for searching users within the platform.
 
 # User Search
 
@@ -64,7 +64,21 @@ Future versions may support advanced filtering and sorting.
 
 ---
 
-# 4. Search Workflow
+# 4. API Endpoint
+
+The planned user search endpoint is:
+
+```http
+GET /api/v1/users/search
+```
+
+The endpoint will allow authenticated users to search for other registered users using supported profile fields.
+
+The search query and supported filters will be validated before executing the database query.
+
+---
+
+# 5. Search Workflow
 
 The search process follows the workflow below.
 
@@ -100,9 +114,9 @@ Only users matching the search criteria are returned.
 
 ---
 
-# 5. Search Strategy
+# 6. Search Strategy
 
-The current implementation performs searches using user profile information.
+The planned implementation will perform searches using user profile information.
 
 The initial implementation is planned to support searching by:
 
@@ -119,7 +133,7 @@ Search behavior is designed to remain extensible without requiring major archite
 
 ---
 
-# 6. Search Results
+# 7. Search Results
 
 Each search result returns only public profile information.
 
@@ -141,9 +155,9 @@ Examples of protected fields include:
 
 ---
 
-# 7. Validation Strategy
+# 8. Validation Strategy
 
-Every search request is validated before querying the database.
+Search requests will be validated before querying the database.
 
 Validation includes:
 
@@ -152,15 +166,15 @@ Validation includes:
 - Data type validation.
 - Empty query handling.
 
-Invalid requests are rejected before reaching business logic.
+Invalid requests will be rejected before reaching business logic.
 
 ---
 
-# 8. Performance Considerations
+# 9. Performance Considerations
 
 User search is expected to become one of the most frequently used features within Nexora.
 
-The implementation has been designed to support efficient database queries.
+The planned implementation is designed to support efficient database queries.
 
 Frequently searched fields may be indexed using MongoDB indexes to improve query performance while balancing storage and write overhead.
 
@@ -168,9 +182,9 @@ As the application grows, additional search optimizations may be introduced.
 
 ---
 
-# 9. Pagination
+# 10. Pagination
 
-The current implementation returns matching search results directly.
+The initial implementation is planned to return matching search results directly.
 
 Future versions may introduce pagination to:
 
@@ -181,9 +195,9 @@ Future versions may introduce pagination to:
 
 ---
 
-# 10. Security Considerations
+# 11. Security Considerations
 
-The user search feature follows these security principles.
+The planned user search feature will follow these security principles.
 
 - Authentication is required.
 - Only public profile information is returned.
@@ -193,9 +207,9 @@ The user search feature follows these security principles.
 
 ---
 
-# 11. Assumptions
+# 12. Assumptions
 
-The current implementation assumes:
+The planned implementation assumes:
 
 - Users are authenticated before performing searches.
 - Search results contain only publicly visible profile information.
@@ -204,9 +218,9 @@ The current implementation assumes:
 
 ---
 
-# 12. Known Limitations
+# 13. Known Limitations
 
-The current implementation intentionally accepts the following limitations.
+The planned implementation intentionally accepts the following limitations.
 
 - Advanced search filters are not yet implemented.
 - Search by username is not currently supported.
@@ -218,7 +232,7 @@ These limitations are acceptable for the current development phase.
 
 ---
 
-# 13. Future Improvements
+# 14. Future Improvements
 
 The user search feature may be extended with:
 
@@ -234,7 +248,7 @@ The user search feature may be extended with:
 
 ---
 
-# 14. Out of Scope
+# 15. Out of Scope
 
 This document intentionally does not cover:
 
@@ -248,7 +262,7 @@ These topics are documented separately within their respective modules.
 
 ---
 
-# 15. Design Decisions
+# 16. Design Decisions
 
 ## Why separate user search from nearby user discovery?
 
@@ -280,7 +294,7 @@ Early validation prevents invalid queries from reaching the database, reducing u
 
 ---
 
-# 16. References
+# 17. References
 
 - MongoDB Documentation
 - MongoDB Indexing Documentation
@@ -290,7 +304,7 @@ Early validation prevents invalid queries from reaching the database, reducing u
 
 ---
 
-# 17. Revision History
+# 18. Revision History
 
 | Version | Description |
 |----------|-------------|
