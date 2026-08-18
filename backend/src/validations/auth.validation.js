@@ -7,6 +7,16 @@ export const registerSchema = z.object({
         .min(3, "Name must be at least 3 characters long.")
         .max(40, "Name cannot exceed 40 characters."),
 
+    gender: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .pipe(
+            z.enum(["male", "female"], {
+                message: "Gender must be either male or female.",
+            })
+        ),
+
     email: z
         .string()
         .trim()
@@ -20,7 +30,8 @@ export const registerSchema = z.object({
             /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&^#()_\-+=])[A-Za-z\d@$!%*?&^#()_\-+=]{8,}$/,
             "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character."
         ),
-});
+})
+.strict();
 
 export const loginSchema = z.object({
     email: z
@@ -33,3 +44,4 @@ export const loginSchema = z.object({
         .string()
         .min(8, "Password must be at least 8 characters long."),
 })
+.strict();

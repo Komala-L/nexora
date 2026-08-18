@@ -7,14 +7,14 @@ import jwt from "jsonwebtoken";
 import { generateAccessAndRefreshTokens } from "../services/auth.service.js"
 
 export const registerUser = asyncHandler(async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, gender, email, password } = req.body;
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
         throw new ApiError(409, "Account already exists");
     }
 
-    const user = new User({name, email, password});
+    const user = new User({name, gender, email, password});
     await user.save();
 
     return res.status(201).json(
@@ -23,6 +23,7 @@ export const registerUser = asyncHandler(async (req, res) => {
             {
                 id: user._id,
                 name: user.name,
+                gender: user.gender,
                 email: user.email,
             },
             "Account created successfully"
