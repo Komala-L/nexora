@@ -2,6 +2,7 @@ import ApiResponse from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import {
   sendConnectionRequest,
+  acceptConnectionRequest,
 } from "../services/connection.service.js";
 
 /**
@@ -32,3 +33,26 @@ export const createConnectionRequest = asyncHandler(async (req, res) => {
     )
   );
 });
+
+/**
+ * Accept a pending connection request.
+ */
+export const acceptConnection = asyncHandler(
+    async (req, res) => {
+        const connection =
+            await acceptConnectionRequest(
+                req.params.connectionId,
+                req.user._id
+            );
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    connection,
+                },
+                "Connection request accepted successfully"
+            )
+        );
+    }
+);

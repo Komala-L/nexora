@@ -153,13 +153,6 @@ export const acceptConnectionRequest = async (
         );
     }
 
-    if (connection.status !== "pending") {
-        throw new ApiError(
-            409,
-            "This connection request cannot be accepted"
-        );
-    }
-
     if (
         connection.recipient.toString() !==
         userId.toString()
@@ -170,13 +163,26 @@ export const acceptConnectionRequest = async (
         );
     }
 
+    if (connection.status === "accepted") {
+        throw new ApiError(
+            409,
+            "Connection request has already been accepted"
+        );
+    }
+
+    if (connection.status !== "pending") {
+        throw new ApiError(
+            409,
+            "This connection request cannot be accepted"
+        );
+    }
+
     connection.status = "accepted";
 
     await connection.save();
 
     return connection;
 };
-
 
 export const rejectConnectionRequest = async (
     connectionId,
