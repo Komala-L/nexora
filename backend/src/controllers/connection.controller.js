@@ -3,6 +3,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import {
   sendConnectionRequest,
   acceptConnectionRequest,
+  rejectConnectionRequest,
 } from "../services/connection.service.js";
 
 /**
@@ -52,6 +53,29 @@ export const acceptConnection = asyncHandler(
                     connection,
                 },
                 "Connection request accepted successfully"
+            )
+        );
+    }
+);
+
+/**
+ * Reject a pending connection request.
+ */
+export const rejectConnection = asyncHandler(
+    async (req, res) => {
+        const result =
+            await rejectConnectionRequest(
+                req.params.connectionId,
+                req.user._id
+            );
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    connectionId: result.connectionId,
+                },
+                "Connection request rejected successfully"
             )
         );
     }

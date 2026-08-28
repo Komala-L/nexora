@@ -199,13 +199,6 @@ export const rejectConnectionRequest = async (
         );
     }
 
-    if (connection.status !== "pending") {
-        throw new ApiError(
-            409,
-            "This connection request cannot be rejected"
-        );
-    }
-
     if (
         connection.recipient.toString() !==
         userId.toString()
@@ -216,11 +209,19 @@ export const rejectConnectionRequest = async (
         );
     }
 
-    await Connection.deleteOne({
-        _id: connection._id,
-    });
-};
+    if (connection.status !== "pending") {
+        throw new ApiError(
+            409,
+            "This connection request cannot be rejected"
+        );
+    }
 
+    await connection.deleteOne();
+
+    return {
+        connectionId: connection._id,
+    };
+};
 
 export const cancelConnectionRequest = async (
     connectionId,

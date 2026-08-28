@@ -8,6 +8,7 @@ import {
 import {
     createConnectionRequest,
     acceptConnection,
+    rejectConnection,
 } from "../controllers/connection.controller.js";
 
 const router = Router();
@@ -21,4 +22,9 @@ router.post("/requests/:userId",verifyJWT,validateParams(connectionUserIdSchema)
  * Accept a pending connection request.
  */
 router.patch("/requests/:connectionId/accept",verifyJWT,validateParams(connectionIdSchema),acceptConnection);
+
+/**
+ * Reject a pending connection request.
+ */
+router.patch("/requests/:connectionId/reject",verifyJWT,validateParams(connectionIdSchema),rejectConnection);
 export default router;
