@@ -5,6 +5,7 @@ import {
   acceptConnectionRequest,
   rejectConnectionRequest,
   cancelConnectionRequest,
+  removeConnection,
 } from "../services/connection.service.js";
 
 /**
@@ -100,6 +101,28 @@ export const cancelConnection = asyncHandler(
                     connectionId: result.connectionId,
                 },
                 "Connection request cancelled successfully"
+            )
+        );
+    }
+);
+
+/**
+ * Remove an existing connection.
+ */
+export const removeConnectionController = asyncHandler(
+    async (req, res) => {
+        const result = await removeConnection(
+            req.params.connectionId,
+            req.user._id
+        );
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    connectionId: result.connectionId,
+                },
+                "Connection removed successfully"
             )
         );
     }

@@ -430,13 +430,6 @@ export const removeConnection = async (
         );
     }
 
-    if (connection.status !== "accepted") {
-        throw new ApiError(
-            409,
-            "Only accepted connections can be removed"
-        );
-    }
-
     const isRequester =
         connection.requester.toString() ===
         userId.toString();
@@ -452,7 +445,16 @@ export const removeConnection = async (
         );
     }
 
-    await Connection.deleteOne({
-        _id: connection._id,
-    });
+    if (connection.status !== "accepted") {
+        throw new ApiError(
+            409,
+            "Only accepted connections can be removed"
+        );
+    }
+
+    await connection.deleteOne();
+
+    return {
+        connectionId: connection._id,
+    };
 };
