@@ -4,6 +4,7 @@ import {
   sendConnectionRequest,
   acceptConnectionRequest,
   rejectConnectionRequest,
+  cancelConnectionRequest,
 } from "../services/connection.service.js";
 
 /**
@@ -76,6 +77,29 @@ export const rejectConnection = asyncHandler(
                     connectionId: result.connectionId,
                 },
                 "Connection request rejected successfully"
+            )
+        );
+    }
+);
+
+/**
+ * Cancel an outgoing pending connection request.
+ */
+export const cancelConnection = asyncHandler(
+    async (req, res) => {
+        const result =
+            await cancelConnectionRequest(
+                req.params.connectionId,
+                req.user._id
+            );
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    connectionId: result.connectionId,
+                },
+                "Connection request cancelled successfully"
             )
         );
     }

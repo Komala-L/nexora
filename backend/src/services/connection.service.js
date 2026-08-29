@@ -223,6 +223,7 @@ export const rejectConnectionRequest = async (
     };
 };
 
+
 export const cancelConnectionRequest = async (
     connectionId,
     userId
@@ -238,13 +239,6 @@ export const cancelConnectionRequest = async (
         );
     }
 
-    if (connection.status !== "pending") {
-        throw new ApiError(
-            409,
-            "Only pending connection requests can be cancelled"
-        );
-    }
-
     if (
         connection.requester.toString() !==
         userId.toString()
@@ -255,9 +249,18 @@ export const cancelConnectionRequest = async (
         );
     }
 
-    await Connection.deleteOne({
-        _id: connection._id,
-    });
+    if (connection.status !== "pending") {
+        throw new ApiError(
+            409,
+            "Only pending connection requests can be cancelled"
+        );
+    }
+
+    await connection.deleteOne();
+
+    return {
+        connectionId: connection._id,
+    };
 };
 
 
