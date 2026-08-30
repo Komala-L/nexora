@@ -360,12 +360,8 @@ export const getUserConnections = async (
     const filter = {
         status: "accepted",
         $or: [
-            {
-                requester: userId,
-            },
-            {
-                recipient: userId,
-            },
+            { requester: userId },
+            { recipient: userId },
         ],
     };
 
@@ -373,7 +369,7 @@ export const getUserConnections = async (
         Connection.find(filter)
             .populate(
                 "requester recipient",
-                "name profilePic bio interests"
+                "_id name profilePic bio interests"
             )
             .sort({
                 updatedAt: -1,

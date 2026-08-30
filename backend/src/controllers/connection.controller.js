@@ -6,6 +6,7 @@ import {
   rejectConnectionRequest,
   cancelConnectionRequest,
   removeConnection,
+  getUserConnections,
 } from "../services/connection.service.js";
 
 /**
@@ -123,6 +124,26 @@ export const removeConnectionController = asyncHandler(
                     connectionId: result.connectionId,
                 },
                 "Connection removed successfully"
+            )
+        );
+    }
+);
+
+/**
+ * Get the authenticated user's accepted connections.
+ */
+export const getMyConnections = asyncHandler(
+    async (req, res) => {
+        const result = await getUserConnections(
+            req.user._id,
+            req.validatedQuery
+        );
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                result,
+                "Connections fetched successfully"
             )
         );
     }

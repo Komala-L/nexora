@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { verifyJWT } from "../middleware/auth.middleware.js";
-import { validateParams, } from "../middleware/validation.middleware.js";
+import { validateParams, validateQuery } from "../middleware/validation.middleware.js";
 import { 
     connectionUserIdSchema, 
     connectionIdSchema, 
+    getConnectionsQuerySchema,
 } from "../validations/connection.validation.js";
 import {
     createConnectionRequest,
@@ -11,6 +12,7 @@ import {
     rejectConnection,
     cancelConnection,
     removeConnectionController,
+    getMyConnections,
 } from "../controllers/connection.controller.js";
 
 const router = Router();
@@ -34,6 +36,11 @@ router.patch("/requests/:connectionId/reject",verifyJWT,validateParams(connectio
  * Cancel an outgoing pending connection request.
  */
 router.delete("/requests/:connectionId",verifyJWT,validateParams(connectionIdSchema),cancelConnection);
+
+/**
+ * Get the authenticated user's accepted connections.
+ */
+router.get("/",verifyJWT,validateQuery(getConnectionsQuerySchema),getMyConnections);
 
 /**
  * Remove an existing accepted connection.
