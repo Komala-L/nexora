@@ -8,6 +8,7 @@ import {
   removeConnection,
   getUserConnections,
   getReceivedConnectionRequests,
+  getSentConnectionRequests,
 } from "../services/connection.service.js";
 
 /**
@@ -166,6 +167,26 @@ export const getReceivedRequests = asyncHandler(
                 200,
                 result,
                 "Received connection requests fetched successfully"
+            )
+        );
+    }
+);
+
+/**
+ * Get pending connection requests sent by the authenticated user.
+ */
+export const getSentRequests = asyncHandler(
+    async (req, res) => {
+        const result = await getSentConnectionRequests(
+            req.user._id,
+            req.validatedQuery
+        );
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                result,
+                "Sent connection requests fetched successfully"
             )
         );
     }

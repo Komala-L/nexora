@@ -14,6 +14,7 @@ import {
     removeConnectionController,
     getMyConnections,
     getReceivedRequests,
+    getSentRequests,
 } from "../controllers/connection.controller.js";
 
 const router = Router();
@@ -47,6 +48,11 @@ router.get("/",verifyJWT,validateQuery(getConnectionsQuerySchema),getMyConnectio
  * Get pending connection requests received by the authenticated user.
  */
 router.get("/requests/received",verifyJWT,validateQuery(getConnectionsQuerySchema),getReceivedRequests);
+
+/**
+ * Get pending connection requests sent by the authenticated user.
+ */
+router.get("/requests/sent",verifyJWT,validateQuery(getConnectionsQuerySchema),getSentRequests);
 
 /**
  * Remove an existing accepted connection.

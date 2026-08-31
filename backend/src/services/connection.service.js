@@ -324,7 +324,7 @@ export const getSentConnectionRequests = async (
         Connection.find(filter)
             .populate(
                 "recipient",
-                "name profilePic bio interests"
+                "_id name profilePic bio interests"
             )
             .sort({
                 createdAt: -1,
