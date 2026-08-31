@@ -10,11 +10,11 @@
 | Project          | Nexora                |
 | Module           | Connection Management |
 | Document Type    | Module Overview       |
-| Document Version | 0.1                   |
+| Document Version | 0.2                   |
 | Status           | Active                |
 | Review Status    | Approved              |
 | Author           | Komala L              |
-| Last Updated     | 19 August 2026        |
+| Last Updated     | 31 August 2026        |
 
 ---
 
@@ -39,8 +39,8 @@ The Connection Management module is responsible for managing relationship reques
 The module allows authenticated users to:
 
 * Send connection requests.
-* View incoming requests.
-* View outgoing requests.
+* View received pending requests.
+* View sent pending requests.
 * Accept requests.
 * Reject requests.
 * Cancel outgoing requests.
@@ -231,29 +231,33 @@ The original request remains pending until the recipient explicitly accepts or r
 
 # 9. API Summary
 
-The initial Connection Management API consists of:
+The Connection Management API consists of the following endpoints:
 
-| Method | Endpoint                                         | Purpose                    |
-| ------ | ------------------------------------------------ | -------------------------- |
-| POST   | `/api/v1/connections/requests/:userId`           | Send connection request    |
-| GET    | `/api/v1/connections/requests/incoming`          | Get incoming requests      |
-| GET    | `/api/v1/connections/requests/outgoing`          | Get outgoing requests      |
-| PATCH  | `/api/v1/connections/requests/:requestId/accept` | Accept request             |
-| PATCH  | `/api/v1/connections/requests/:requestId/reject` | Reject request             |
-| DELETE | `/api/v1/connections/requests/:requestId`        | Cancel outgoing request    |
-| GET    | `/api/v1/connections`                            | Get accepted connections   |
-| DELETE | `/api/v1/connections/:userId`                    | Remove accepted connection |
+| Method | Endpoint | Purpose |
+| ------ | -------- | ------- |
+| POST | `/api/v1/connections/requests/:userId` | Send connection request |
+| PATCH | `/api/v1/connections/requests/:connectionId/accept` | Accept connection request |
+| PATCH | `/api/v1/connections/requests/:connectionId/reject` | Reject connection request |
+| DELETE | `/api/v1/connections/requests/:connectionId` | Cancel outgoing connection request |
+| GET | `/api/v1/connections` | Get accepted connections |
+| GET | `/api/v1/connections/requests/received` | Get pending received connection requests |
+| GET | `/api/v1/connections/requests/sent` | Get pending sent connection requests |
+| DELETE | `/api/v1/connections/:connectionId` | Remove accepted connection |
 
-All endpoints require authentication. Detailed request, response, validation, pagination, authorization, and error specifications are documented in `api.md`.
+All endpoints require authentication.
+
+List endpoints support pagination where applicable.
+
+Detailed request, response, validation, authorization, pagination, and error specifications are documented in `api.md`.
 
 ---
 
 # 10. Authorization
 
-Authentication establishes the current user through:
+Authentication establishes the current user through the authenticated user object:
 
 ```text
-req.user.id
+req.user._id
 ```
 
 The Connection service enforces relationship-level authorization.
@@ -292,7 +296,13 @@ Connection documents also do not duplicate location information. Nearby Discover
 
 # 12. Pagination
 
-Connection lists support:
+The following connection list endpoints support pagination:
+
+- `GET /api/v1/connections`
+- `GET /api/v1/connections/requests/received`
+- `GET /api/v1/connections/requests/sent`
+
+Supported query parameters:
 
 ```text
 page
@@ -414,6 +424,7 @@ These responsibilities belong to their respective modules or future features.
 
 # 18. Revision History
 
-| Version | Description                                                     |
-| ------- | --------------------------------------------------------------- |
-| 0.1     | Initial Connection Management Module Overview                   |
+| Version | Description |
+| ------- | ----------- |
+| 0.1 | Initial Connection Management Module Overview |
+| 0.2 | Updated API summary, authorization details, pagination, and implemented Connection Management endpoints |

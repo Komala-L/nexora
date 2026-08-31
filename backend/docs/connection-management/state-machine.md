@@ -2,220 +2,354 @@
 
 ## Document Information
 
-  Property           Value
-  ------------------ -----------------------
-  Project            Nexora
-  Module             Connection Management
-  Document Type      State Machine Design
-  Document Version   0.1
-  Status             Active
-  Review Status      Approved
-  Author             Komala L
-  Last Updated       19 August 2026
+| Property         | Value                 |
+| ---------------- | --------------------- |
+| Project          | Nexora                |
+| Module           | Connection Management |
+| Document Type    | State Machine Design  |
+| Document Version | 0.2                   |
+| Status           | Active                |
+| Review Status    | Approved              |
+| Author           | Komala L              |
+| Last Updated     | 31 August 2026        |
 
-------------------------------------------------------------------------
+---
 
 # 1. Overview
 
-The Connection Management module uses a small state machine to represent
-the current relationship between two users.
+The Connection Management module uses a small state machine to represent the current relationship between two users.
 
 Only two relationship states are persisted:
 
-``` text
+```text id="b5p7k2"
 pending
 accepted
 ```
 
-Other outcomes are represented by deleting the Connection document.
+Rejected, cancelled, and removed relationships are represented by deleting the Connection document rather than storing them as permanent states.
 
-------------------------------------------------------------------------
+---
 
 # 2. Relationship Lifecycle
 
-``` text
-                     SEND REQUEST
-                          ↓
-                   ┌─────────────┐
-                   │   PENDING   │
-                   └──────┬──────┘
-                          │
-              ┌───────────┴───────────┐
-              ↓                       ↓
-           ACCEPT                   REJECT
-              ↓                       ↓
-       ┌──────────────┐            DELETE
-       │   ACCEPTED   │
-       └───────┬──────┘
-               │
-          DISCONNECT
-               ↓
-            DELETE
+The complete relationship lifecycle is:
+
+```text id="i3f3s7"
+                 SEND REQUEST
+                      ↓
+               ┌─────────────┐
+               │   PENDING   │
+               └──────┬──────┘
+                      │
+             ┌────────┴────────┐
+             ↓                 ↓
+          ACCEPT             REJECT
+             ↓                 ↓
+      ┌──────────────┐       DELETE
+      │   ACCEPTED   │
+      └───────┬──────┘
+              │
+          REMOVE
+              ↓
+           DELETE
 ```
 
-Cancellation follows:
+A pending request can also be cancelled by the requester:
 
-``` text
+```text id="0y5w4a"
 PENDING
    │
    │ requester cancels
    ↓
- DELETE
+DELETE
 ```
 
-------------------------------------------------------------------------
+---
 
-# 3. Pending State
+# 3. Persisted States
 
-A relationship enters `pending` when a user successfully sends a
-connection request.
+The Connection model persists only two states.
+
+## 3.1 Pending
+
+```text id="5kvx9v"
+pending
+```
+
+Represents a connection request that has been created but has not yet been accepted.
 
 Example:
 
-``` text
+```text id="f0g3kw"
 A → B
 status = pending
 ```
 
-While pending:
+## 3.2 Accepted
 
--   The recipient can accept.
--   The recipient can reject.
--   The requester can cancel.
--   Neither user can create another relationship with the other user.
--   A reverse request is not created.
-
-------------------------------------------------------------------------
-
-# 4. Accepted State
-
-When the recipient accepts:
-
-``` text
-pending → accepted
+```text id="qg9v0j"
+accepted
 ```
 
-The existing Connection document is updated.
-
-A second Connection document is not created.
+Represents an established connection between two users.
 
 Example:
 
-``` text
-A → B
+```text id="y3l7yc"
+A ↔ B
 status = accepted
 ```
 
-At this point, A and B are connected.
+The same Connection document changes from `pending` to `accepted`.
 
-The accepted relationship later acts as the authorization prerequisite
-for Chat.
+---
 
-------------------------------------------------------------------------
+# 4. State Transitions
 
-# 5. Rejection
+## 4.1 Create Request
 
-When the recipient rejects a pending request:
+Initial state:
 
-``` text
+```text id="z6m1l4"
+NONE
+```
+
+Action:
+
+```text id="xq7e2k"
+Send connection request
+```
+
+Result:
+
+```text id="c5v8my"
+pending
+```
+
+---
+
+## 4.2 Accept Request
+
+Current state:
+
+```text id="7m4w1v"
+pending
+```
+
+Action:
+
+```text id="r5b9qz"
+Recipient accepts
+```
+
+Result:
+
+```text id="j4r3kp"
+accepted
+```
+
+Transition:
+
+```text id="kq6e1n"
+pending → accepted
+```
+
+The existing Connection document is updated. A new document is not created.
+
+---
+
+## 4.3 Reject Request
+
+Current state:
+
+```text id="n7f2qx"
+pending
+```
+
+Action:
+
+```text id="v9p3kd"
+Recipient rejects
+```
+
+Result:
+
+```text id="m6r4yx"
+DELETE
+```
+
+Transition:
+
+```text id="q8d2la"
 pending → DELETE
 ```
 
-There is no persisted `rejected` state.
+No `rejected` state is persisted.
 
-The Connection collection therefore continues to represent only active
-relationships.
+---
 
-------------------------------------------------------------------------
+## 4.4 Cancel Request
 
-# 6. Cancellation
+Current state:
 
-When the requester cancels a pending request:
+```text id="s4k9we"
+pending
+```
 
-``` text
+Action:
+
+```text id="u2p7bc"
+Requester cancels
+```
+
+Result:
+
+```text id="t5n8mh"
+DELETE
+```
+
+Transition:
+
+```text id="x3c6rq"
 pending → DELETE
 ```
 
-Only the requester can perform this operation.
+---
 
-------------------------------------------------------------------------
+## 4.5 Remove Connection
 
-# 7. Removal
+Current state:
 
-When two users are already connected, either connected user may remove
-the relationship:
+```text id="b8j4zn"
+accepted
+```
 
-``` text
+Action:
+
+```text id="d6p2ws"
+Either connected user removes the connection
+```
+
+Result:
+
+```text id="h7q1mv"
+DELETE
+```
+
+Transition:
+
+```text id="e9r5ka"
 accepted → DELETE
 ```
 
-Only an accepted relationship can be removed through the disconnect
-operation.
+---
 
-------------------------------------------------------------------------
+# 5. Allowed Transitions
 
-# 8. Allowed Transitions
+| Current State | Action                        | Result     |
+| ------------- | ----------------------------- | ---------- |
+| None          | Send request                  | `pending`  |
+| `pending`     | Recipient accepts             | `accepted` |
+| `pending`     | Recipient rejects             | Delete     |
+| `pending`     | Requester cancels             | Delete     |
+| `accepted`    | Either connected user removes | Delete     |
 
-  Current State   Action                          Result
-  --------------- ------------------------------- ------------
-  None            Send request                    `pending`
-  `pending`       Recipient accepts               `accepted`
-  `pending`       Recipient rejects               Delete
-  `pending`       Requester cancels               Delete
-  `accepted`      Either connected user removes   Delete
+---
 
-------------------------------------------------------------------------
+# 6. Forbidden Transitions
 
-# 9. Forbidden Transitions
+The following state transitions are not allowed:
 
-The following operations are not allowed:
-
-``` text
+```text id="j4x8fw"
 accepted → pending
 ```
 
-``` text
+An accepted connection cannot be converted back into a pending request.
+
+```text id="k9q2sd"
 pending → pending
 ```
 
-through another request.
+A second request cannot create another pending relationship for the same user pair.
 
-``` text
+```text id="w3m7zc"
 pending → accepted
 ```
 
 through a reverse request.
 
-A user also cannot accept or reject a request unless they are the
-recipient.
+A reverse request does not automatically accept an existing pending request.
 
-A user cannot cancel a request unless they are the requester.
+The recipient must explicitly accept the original request.
 
-------------------------------------------------------------------------
+---
 
-# 10. Relationship Invariant
+# 7. Authorization Boundaries
+
+State transitions are also subject to relationship-level authorization.
+
+| Transition             | Authorized User       |
+| ---------------------- | --------------------- |
+| None → `pending`       | Authenticated user    |
+| `pending` → `accepted` | Recipient             |
+| `pending` → Delete     | Recipient             |
+| `pending` → Delete     | Requester             |
+| `accepted` → Delete    | Either connected user |
+
+Authorization is enforced by the Connection service.
+
+Detailed authorization and API behavior are documented in `api.md`.
+
+---
+
+# 8. Relationship Invariant
 
 For any pair of users:
 
 > At most one active Connection document may exist.
 
-The active relationship can therefore be either:
+Therefore, a user pair can have only one of the following active states:
 
-``` text
+```text id="x6z9kr"
 pending
 ```
 
 or:
 
-``` text
+```text id="n2c5vp"
 accepted
 ```
 
 but never both simultaneously.
 
-------------------------------------------------------------------------
+The normalized `pairKey` and database uniqueness constraint support this invariant.
 
-# 11. Why Deleted States Are Not Persisted
+---
+
+# 9. Deleted States
+
+Nexora does not persist the following as Connection states:
+
+```text id="g5s7nm"
+rejected
+cancelled
+removed
+```
+
+Instead, the Connection document is deleted.
+
+Therefore:
+
+```text id="e8q1yw"
+pending → DELETE
+accepted → DELETE
+```
+
+This keeps the Connection collection focused on the current active relationship.
+
+---
+
+# 10. Why Deleted States Are Not Persisted
 
 The Connection collection answers:
 
@@ -225,65 +359,80 @@ It does not answer:
 
 > What has ever happened between these users?
 
-If Nexora later requires relationship history, audit logs, request
-history, or moderation records, those concerns should be implemented
-through a separate history or event mechanism.
+Persisting rejected, cancelled, or removed states would turn the Connection collection into a relationship history store.
 
-------------------------------------------------------------------------
+If Nexora later requires relationship history, audit logs, request history, or moderation records, those concerns should be implemented through a separate history or event mechanism.
 
-# 12. Chat Authorization
+---
 
-The Connection state establishes the relationship boundary for Chat.
+# 11. State Machine and Chat
+
+An accepted Connection establishes the relationship prerequisite for future Chat functionality.
 
 The future Chat module should verify:
 
-``` text
+```text id="h3r6pb"
 Connection.status === "accepted"
 ```
 
-before allowing conversation.
+before allowing communication.
 
-A pending relationship must not authorize communication.
+Pending or deleted relationships must not authorize communication.
 
-------------------------------------------------------------------------
+---
 
-# 13. Notification Integration
+# 12. State Machine and Notifications
 
-Connection state changes may later generate events for the Notification
-module.
+Connection state changes may later generate events for the Notification module.
 
 Examples include:
 
-``` text
+```text id="m7q2zx"
 Connection Request Created
 Connection Request Accepted
 ```
 
-Notification delivery remains outside the Connection module.
+Notification delivery remains outside the Connection Management module.
 
-------------------------------------------------------------------------
+---
 
-# 14. Design Decision
+# 13. Design Decision
 
 The state machine intentionally remains small.
 
-Nexora will not persist:
+The Connection collection represents **current active relationship state**, not historical events.
 
-``` text
-rejected
-cancelled
-removed
+Therefore:
+
+```text id="t8w3ny"
+Persisted:
+    pending
+    accepted
+
+Not persisted:
+    rejected
+    cancelled
+    removed
 ```
 
-as Connection states.
+This keeps relationship state predictable and avoids unnecessary historical states in the Connection collection.
 
-This keeps the Connection collection focused on active relationship
-state and avoids turning it into a historical event log.
+---
 
-------------------------------------------------------------------------
+# 14. Related Documents
+
+| Document              | Purpose                                |
+| --------------------- | -------------------------------------- |
+| `overview.md`         | Connection Management module overview  |
+| `api.md`              | Connection Management API contracts    |
+| `data-model.md`       | Connection schema and database design  |
+| `request-strategy.md` | Duplicate and reverse-request handling |
+
+---
 
 # 15. Revision History
 
-  Version   Description
-  --------- ------------------------------------------------------
-  0.1       Initial Connection Relationship State Machine Design
+| Version | Description                                                                              |
+| ------- | ---------------------------------------------------------------------------------------- |
+| 0.1     | Initial Connection Relationship State Machine Design                                     |
+| 0.2     | Updated state machine to reflect the implemented relationship lifecycle and API behavior |

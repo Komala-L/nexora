@@ -2,38 +2,34 @@
 
 ## Document Information
 
-  Property           Value
-  ------------------ -----------------------
-  Project            Nexora
-  Module             Connection Management
-  Document Type      Data Model Design
-  Document Version   0.1
-  Status             Active
-  Review Status      Approved
-  Author             Komala L
-  Last Updated       19 August 2026
+| Property         | Value                 |
+| ---------------- | --------------------- |
+| Project          | Nexora                |
+| Module           | Connection Management |
+| Document Type    | Data Model Design     |
+| Document Version | 0.2                   |
+| Status           | Active                |
+| Review Status    | Approved              |
+| Author           | Komala L              |
+| Last Updated     | 31 August 2026        |
 
-------------------------------------------------------------------------
+---
 
 # 1. Overview
 
-Nexora uses a single `Connection` collection to represent both pending
-connection requests and accepted relationships.
+Nexora uses a single `Connection` collection to represent both pending connection requests and accepted relationships.
 
-The same document changes state when a request is accepted. Rejected,
-cancelled, and removed relationships are deleted rather than retained as
-historical states.
+The same document changes state when a request is accepted. Rejected, cancelled, and removed relationships are deleted rather than retained as historical states.
 
-The collection therefore represents the **current active relationship
-state** between two users.
+The collection therefore represents the **current active relationship state** between two users.
 
-------------------------------------------------------------------------
+---
 
 # 2. Connection Document
 
 The conceptual model is:
 
-``` text
+```text
 Connection
 │
 ├── requester
@@ -43,7 +39,7 @@ Connection
 │     └── ObjectId → User
 │
 ├── pairKey
-│     └── unique relationship identity
+│     └── String
 │
 ├── status
 │     ├── pending
@@ -55,16 +51,18 @@ Connection
 
 ## Fields
 
-  Field         Purpose
-  ------------- --------------------------------------------------
-  `requester`   User who initiated the connection request
-  `recipient`   User who received the request
-  `pairKey`     Normalized identity of the two-user relationship
-  `status`      Current active relationship state
-  `createdAt`   Creation timestamp
-  `updatedAt`   Last modification timestamp
+| Field       | Type     | Required  | Purpose                                          |
+| ----------- | -------- | --------- | ------------------------------------------------ |
+| `requester` | ObjectId | Yes       | User who initiated the connection request        |
+| `recipient` | ObjectId | Yes       | User who received the connection request         |
+| `pairKey`   | String   | Yes       | Normalized identity of the two-user relationship |
+| `status`    | String   | Yes       | Current active relationship state                |
+| `createdAt` | Date     | Automatic | Time when the document was created               |
+| `updatedAt` | Date     | Automatic | Time when the document was last modified         |
 
-------------------------------------------------------------------------
+The `requester` and `recipient` fields reference the `User` collection.
+
+---
 
 # 3. Requester and Recipient
 
@@ -72,22 +70,22 @@ A connection request is directional.
 
 For example:
 
-``` text
+```text
 A → B
 ```
 
 means:
 
--   A is the `requester`.
--   B is the `recipient`.
+* A is the `requester`.
+* B is the `recipient`.
 
-This distinction is required because only the recipient can accept or
-reject a pending request, while only the requester can cancel it.
+This distinction is required because the relationship begins as a request from one user to another.
 
-After acceptance, the same document represents the established
-relationship.
+After acceptance, the same document represents the established relationship.
 
-------------------------------------------------------------------------
+The original `requester` and `recipient` values are retained after acceptance.
+
+---
 
 # 4. Relationship Identity
 
@@ -95,20 +93,20 @@ Every pair of users has one normalized `pairKey`.
 
 For example:
 
-``` text
+```text
 User A = 123
 User B = 456
 ```
 
 The normalized relationship identity is:
 
-``` text
+```text
 123:456
 ```
 
 The reverse ordering:
 
-``` text
+```text
 456:123
 ```
 
@@ -116,10 +114,11 @@ must resolve to the same relationship identity.
 
 This creates the fundamental invariant:
 
-> For any pair of users, Nexora can have at most one active Connection
-> document.
+> For any pair of users, Nexora can have at most one active `Connection` document.
 
-------------------------------------------------------------------------
+The `pairKey` is uniquely constrained at the database level.
+
+---
 
 # 5. Status
 
@@ -127,42 +126,57 @@ The `status` field represents the current active relationship state.
 
 Only two values are persisted:
 
-``` text
+```text
 pending
 accepted
 ```
 
-### `pending`
+## `pending`
 
-A connection request exists and the recipient has not yet accepted it.
+A connection request exists and is awaiting a response from the recipient.
 
-### `accepted`
+## `accepted`
 
-The recipient has accepted the request and the users are connected.
+The connection request has been accepted and the users are connected.
 
-Rejected, cancelled, and removed states are not persisted.
+Rejected, cancelled, and removed states are not persisted as permanent states. The corresponding document is deleted.
 
-------------------------------------------------------------------------
+---
 
 # 6. Timestamps
 
-The Connection document maintains:
+The Connection schema uses automatic timestamps:
 
--   `createdAt`
--   `updatedAt`
+```text
+createdAt
+updatedAt
+```
 
-These timestamps are used to identify when the relationship document was
-created and when its current state was last modified.
+## `createdAt`
 
-------------------------------------------------------------------------
+Records when the Connection document was initially created.
+
+## `updatedAt`
+
+Records when the Connection document was last modified.
+
+These timestamps are also used by relationship list APIs for ordering results, such as returning the newest requests first.
+
+---
 
 # 7. Database Integrity
 
-The `pairKey` field must be unique.
+The Connection model uses database constraints to protect relationship integrity.
 
-The integrity strategy is:
+The primary relationship identity constraint is:
 
-``` text
+```text
+pairKey → unique
+```
+
+Conceptually:
+
+```text
 Service Validation
        ↓
 Duplicate Detection
@@ -170,104 +184,151 @@ Duplicate Detection
 MongoDB Unique Constraint
 ```
 
-Service-level validation handles expected duplicate and state checks.
+Service-level validation handles expected business conflicts.
 
-The database-level unique constraint provides a final protection against
-duplicate relationship documents, including concurrent creation
-attempts.
+The database-level unique constraint provides final protection against duplicate relationship documents, including concurrent creation attempts.
 
-------------------------------------------------------------------------
+---
 
-# 8. Relationship With User
+# 8. User References
 
 The Connection document references users through:
 
-``` text
+```text
 requester → User
 recipient → User
 ```
 
-The Connection collection does not duplicate user profile or location
-data.
+The Connection collection does not duplicate user profile information.
 
-Connection responses must expose only the limited user information
-required by the client.
+When relationship data is returned to clients, required public user fields may be populated from the referenced `User` document.
 
-Sensitive fields such as:
+For example:
 
-``` text
-email
-password
-refreshToken
-location
-discoveryLocation
+```text
+name
+profilePic
+bio
+interests
 ```
 
-must not be exposed through Connection APIs.
+The Connection model itself does not store copies of these fields.
 
-------------------------------------------------------------------------
+---
 
 # 9. Location Privacy Boundary
 
-Connection documents must not contain:
+Connection documents do not contain user location information.
 
-``` text
+The following fields are intentionally not part of the Connection schema:
+
+```text
 location
 discoveryLocation
 ```
 
-Nearby Discovery determines which users are nearby, while Connection
-Management determines the relationship between users.
+Nearby Discovery determines which users are nearby, while Connection Management determines the relationship between users.
 
-This keeps location discovery and relationship management separate.
+This maintains a clear separation between location discovery and relationship management.
 
-------------------------------------------------------------------------
+---
 
-# 10. Design Decisions
+# 10. Data Lifecycle
+
+The Connection document represents the current relationship state.
+
+Conceptually:
+
+```text
+Create
+  ↓
+pending
+  ↓
+accepted
+```
+
+For relationships that are rejected, cancelled, or removed:
+
+```text
+pending / accepted
+       ↓
+     DELETE
+```
+
+No separate historical relationship document is created.
+
+Relationship history is outside the scope of the current data model.
+
+---
+
+# 11. Design Decisions
 
 ## Why use one Connection collection?
 
-A single collection represents both pending requests and accepted
-relationships using one relationship document.
+A single collection represents both pending requests and accepted relationships using one relationship document.
 
-This avoids unnecessary duplication between separate request and
-connection collections.
+This avoids maintaining separate collections for connection requests and established connections.
 
 ## Why use requester and recipient?
 
-The relationship begins as a directional request, so the system must
-know who initiated it and who must respond.
+The initial relationship is directional, so the model must retain who initiated the request and who received it.
 
 ## Why use pairKey?
 
-`pairKey` provides a normalized identity for the user pair and prevents
-`A → B` and `B → A` from being treated as separate relationships.
+`pairKey` provides a normalized identity for the user pair and ensures that:
+
+```text
+A → B
+```
+
+and:
+
+```text
+B → A
+```
+
+refer to the same relationship identity.
 
 ## Why store only pending and accepted?
 
-The Connection collection represents current active relationships rather
-than relationship history.
+The Connection collection represents the current active relationship rather than relationship history.
 
 Rejected, cancelled, and removed relationships are deleted.
 
-------------------------------------------------------------------------
+---
 
-# 11. Out of Scope
+# 12. Out of Scope
 
-This document does not cover:
+This data model does not cover:
 
--   Authentication.
--   User profile management.
--   Nearby user discovery.
--   Chat messages.
--   Notifications.
--   Relationship history.
--   Blocking.
+* Authentication.
+* User profile management.
+* Nearby user discovery.
+* Chat messages.
+* Notifications.
+* Relationship history.
+* Blocking.
+* Connection recommendations.
+* Connection analytics.
 
-------------------------------------------------------------------------
+These concerns belong to separate modules or future features.
 
-# 12. Revision History
+---
 
-  Version   Description
-  --------- --------------------------------------
-  0.1       Initial Connection Data Model Design
+# 13. Related Documents
+
+| Document              | Purpose                                      |
+| --------------------- | -------------------------------------------- |
+| `overview.md`         | Connection Management module overview        |
+| `api.md`              | Connection Management API contracts          |
+| `state-machine.md`    | Relationship lifecycle and state transitions |
+| `request-strategy.md` | Duplicate and reverse-request handling       |
+
+---
+
+# 14. Revision History
+
+| Version | Description                                                                                                          |
+| ------- | -------------------------------------------------------------------------------------------------------------------- |
+| 0.1     | Initial Connection Data Model Design                                                                                 |
+| 0.2     | Updated data model to reflect the implemented Connection schema, constraints, timestamps, and document relationships |
