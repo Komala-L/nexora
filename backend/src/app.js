@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import errorMiddleware from "./middleware/error.middleware.js";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import connectionRoutes from "./routes/connection.routes.js";
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/connections", connectionRoutes);
 app.use(errorMiddleware);
 
 export default app;
