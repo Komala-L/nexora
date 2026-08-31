@@ -282,7 +282,7 @@ export const getReceivedConnectionRequests = async (
         Connection.find(filter)
             .populate(
                 "requester",
-                "name profilePic bio interests"
+                "_id name profilePic bio interests"
             )
             .sort({
                 createdAt: -1,
