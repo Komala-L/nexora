@@ -4,6 +4,7 @@ import Register from "./pages/auth/Register";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
 import Home from "./pages/user/Home";
+import Requests from "./pages/user/Requests";
 
 const App = () => {
     return (
@@ -31,8 +32,14 @@ const App = () => {
                         path="/home"
                         element={<Home />}
                     />
+
+                    <Route
+                        path="/requests"
+                        element={<Requests />}
+                    />
                 </Route>
             </Route>
+
         </Routes>
     );
 };
