@@ -2,17 +2,18 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import Home from "./pages/Home";
+import AppLayout from "./components/layout/AppLayout";
+import Home from "./pages/user/Home";
 
 const App = () => {
     return (
         <Routes>
+            {/* Public Routes */}
             <Route
                 path="/"
                 element={<Navigate to="/register" replace />}
             />
 
-            {/* Public Routes */}
             <Route
                 path="/register"
                 element={<Register />}
@@ -23,12 +24,14 @@ const App = () => {
                 element={<Login />}
             />
 
-            {/* Protected Routes */}
+            {/* Protected User Routes */}
             <Route element={<ProtectedRoute />}>
-                <Route
-                    path="/home"
-                    element={<Home />}
-                />
+                <Route element={<AppLayout />}>
+                    <Route
+                        path="/home"
+                        element={<Home />}
+                    />
+                </Route>
             </Route>
         </Routes>
     );
