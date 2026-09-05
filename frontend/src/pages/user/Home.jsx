@@ -10,6 +10,14 @@ import {
     getNearbyUsers,
     updateUserLocation,
 } from "../../services/user.service";
+import {
+    sendConnectionRequest,
+    getMyConnections,
+    getReceivedConnectionRequests,
+    getSentConnectionRequests,
+    acceptConnectionRequest,
+    rejectConnectionRequest
+} from "../../services/connection.service";
 
 const Home = () => {
     const { user } = useAuth();
@@ -20,6 +28,8 @@ const Home = () => {
     const [locationRequired, setLocationRequired] = useState(false);
     const [locationError, setLocationError] = useState("");
     const [error, setError] = useState("");
+    const [connectionStatuses, setConnectionStatuses] = useState({});
+    const [connectingUserId, setConnectingUserId] = useState(null);
 
     const fetchNearbyUsers = async () => {
         try {
@@ -53,8 +63,175 @@ const Home = () => {
         }
     };
 
+    const fetchConnectionStatuses = async () => {
+        try {
+            const [
+                connectionsResponse,
+                receivedResponse,
+                sentResponse,
+            ] = await Promise.all([
+                getMyConnections(),
+                getReceivedConnectionRequests(),
+                getSentConnectionRequests(),
+            ]);
+
+            const statuses = {};
+
+            const connections =
+                connectionsResponse.data.connections || [];
+
+            connections.forEach((connection) => {
+                statuses[connection.user._id] = {
+                    status: "connected",
+                    connectionId: connection.connectionId,
+                };
+            });
+
+            const receivedRequests =
+                receivedResponse.data.requests || [];
+
+            receivedRequests.forEach((request) => {
+                statuses[request.requester._id] = {
+                    status: "received",
+                    connectionId: request._id,
+                };
+            });
+
+            const sentRequests =
+                sentResponse.data.requests || [];
+
+            sentRequests.forEach((request) => {
+                statuses[request.recipient._id] = {
+                    status: "pending",
+                    connectionId: request._id,
+                };
+            });
+
+            setConnectionStatuses(statuses);
+        } catch (error) {
+            console.error(
+                "Failed to fetch connection statuses:",
+                error
+            );
+        }
+    };
+
+    const handleConnect = async (userId) => {
+        try {
+            setConnectingUserId(userId);
+
+            const response =
+                await sendConnectionRequest(userId);
+
+            const connection =
+                response.data.connection;
+
+            if (
+                response.message ===
+                "Connection request accepted automatically"
+            ) {
+                setConnectionStatuses((previous) => ({
+                    ...previous,
+                    [userId]: {
+                        status: "connected",
+                        connectionId: connection._id,
+                    },
+                }));
+            } else {
+                setConnectionStatuses((previous) => ({
+                    ...previous,
+                    [userId]: {
+                        status: "pending",
+                        connectionId: connection._id,
+                    },
+                }));
+            }
+        } catch (error) {
+            console.error(
+                "Failed to send connection request:",
+                error
+            );
+
+            setError(
+                error.message ||
+                "Failed to send connection request."
+            );
+        } finally {
+            setConnectingUserId(null);
+        }
+    };
+
+    const handleAccept = async (
+        userId,
+        connectionId
+    ) => {
+        try {
+            setConnectingUserId(userId);
+
+            await acceptConnectionRequest(
+                connectionId
+            );
+
+            setConnectionStatuses((previous) => ({
+                ...previous,
+                [userId]: {
+                    status: "connected",
+                    connectionId,
+                },
+            }));
+        } catch (error) {
+            console.error(
+                "Failed to accept connection:",
+                error
+            );
+
+            setError(
+                error.message ||
+                "Failed to accept connection."
+            );
+        } finally {
+            setConnectingUserId(null);
+        }
+    };
+
+    const handleReject = async (
+        userId,
+        connectionId
+    ) => {
+        try {
+            setConnectingUserId(userId);
+
+            await rejectConnectionRequest(
+                connectionId
+            );
+
+            setConnectionStatuses((previous) => {
+                const updated = {
+                    ...previous,
+                };
+
+                delete updated[userId];
+
+                return updated;
+            });
+        } catch (error) {
+            console.error(
+                "Failed to reject connection:",
+                error
+            );
+
+            setError(
+                error.message ||
+                "Failed to reject connection."
+            );
+        } finally {
+            setConnectingUserId(null);
+        }
+    };
+
     useEffect(() => {
         fetchNearbyUsers();
+        fetchConnectionStatuses();
     }, []);
 
     const handleEnableLocation = () => {
@@ -322,9 +499,13 @@ const Home = () => {
                                         ?.charAt(0)
                                         .toUpperCase() || "U";
 
+                                const connectionStatus = connectionStatuses[nearbyUser._id]?.status;
+
+                                const isConnecting = connectingUserId === nearbyUser._id;
+
                                 return (
                                     <div
-                                        key={nearbyUser.id}
+                                        key={nearbyUser._id}
                                         className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                                     >
                                         <div className="flex items-center gap-4">
@@ -343,13 +524,71 @@ const Home = () => {
                                                 </p>
                                             </div>
                                         </div>
+                                        
+                                        {connectionStatus === "received" ? (
+                                            <div className="mt-5 flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    disabled={isConnecting}
+                                                    onClick={() =>
+                                                        handleAccept(
+                                                            nearbyUser._id,
+                                                            connectionStatuses[
+                                                                nearbyUser._id
+                                                            ].connectionId
+                                                        )
+                                                    }
+                                                    className="flex-1 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                                                >
+                                                    {isConnecting
+                                                        ? "Processing..."
+                                                        : "Accept"}
+                                                </button>
 
-                                        <button
-                                            type="button"
-                                            className="mt-5 w-full rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
-                                        >
-                                            Connect
-                                        </button>
+                                                <button
+                                                    type="button"
+                                                    disabled={isConnecting}
+                                                    onClick={() =>
+                                                        handleReject(
+                                                            nearbyUser._id,
+                                                            connectionStatuses[
+                                                                nearbyUser._id
+                                                            ].connectionId
+                                                        )
+                                                    }
+                                                    className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                                >
+                                                    Reject
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                disabled={
+                                                    connectionStatus === "pending" ||
+                                                    connectionStatus === "connected" ||
+                                                    isConnecting
+                                                }
+                                                onClick={() =>
+                                                    handleConnect(nearbyUser._id)
+                                                }
+                                                className={`mt-5 w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                                                    connectionStatus === "connected"
+                                                        ? "cursor-default bg-emerald-50 text-emerald-700"
+                                                        : connectionStatus === "pending"
+                                                        ? "cursor-default bg-slate-100 text-slate-600"
+                                                        : "bg-indigo-600 text-white hover:bg-indigo-500"
+                                                }`}
+                                            >
+                                                {isConnecting
+                                                    ? "Connecting..."
+                                                    : connectionStatus === "connected"
+                                                    ? "Connected"
+                                                    : connectionStatus === "pending"
+                                                    ? "Pending"
+                                                    : "Connect"}
+                                            </button>
+                                        )}
                                     </div>
                                 );
                             })}
