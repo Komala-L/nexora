@@ -6,6 +6,7 @@ import AppLayout from "./components/layout/AppLayout";
 import Home from "./pages/user/Home";
 import Requests from "./pages/user/Requests";
 import Connections from "./pages/user/Connections";
+import Profile from "./pages/user/Profile";
 
 const App = () => {
     return (
@@ -42,6 +43,11 @@ const App = () => {
                     <Route 
                         path="connections" 
                         element={<Connections />} 
+                    />
+
+                     <Route
+                       path="/users/:userId"
+                       element={<Profile />}
                     />
                 </Route>
             </Route>

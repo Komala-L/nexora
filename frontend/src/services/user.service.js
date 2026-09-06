@@ -46,3 +46,23 @@ export const updateUserLocation = async (longitude, latitude) => {
 
     return data;
 };
+
+export const getUserProfile = async (userId) => {
+    const response = await fetch(
+        `${API_BASE_URL}/users/${userId}`,
+        {
+            method: "GET",
+            credentials: "include",
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message || "Failed to fetch user profile"
+        );
+    }
+
+    return data;
+};

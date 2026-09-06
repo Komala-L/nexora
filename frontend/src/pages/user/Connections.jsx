@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Users,
     UserRound,
@@ -15,6 +16,7 @@ import {
 } from "../../services/connection.service";
 
 const Connections = () => {
+    const navigate = useNavigate();
     const [connections, setConnections] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
@@ -253,6 +255,9 @@ const Connections = () => {
                     <div className="flex gap-2 border-t border-slate-100 pt-4">
                         <button
                             type="button"
+                            onClick={() =>
+                                navigate(`/users/${user?._id}`)
+                            }
                             className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
                         >
                             <UserRound size={16} />
