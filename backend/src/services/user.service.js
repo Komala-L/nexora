@@ -27,13 +27,50 @@ export const updateProfile = async (userId, updateData) => {
         "name",
         "bio",
         "interests",
+        "discoveryPreferences",
+        "professional",
+        "learning",
     ];
 
     const updates = {};
 
-    for (const field of allowedFields) {
+    // Simple fields
+    for (const field of [
+        "name",
+        "bio",
+        "interests",
+        "discoveryPreferences",
+    ]) {
         if (updateData[field] !== undefined) {
             updates[field] = updateData[field];
+        }
+    }
+
+    // Nested professional fields
+    if (updateData.professional !== undefined) {
+        for (const field of [
+            "role",
+            "company",
+            "skills",
+            "industry",
+        ]) {
+            if (updateData.professional[field] !== undefined) {
+                updates[`professional.${field}`] =
+                    updateData.professional[field];
+            }
+        }
+    }
+
+    // Nested learning fields
+    if (updateData.learning !== undefined) {
+        for (const field of [
+            "subjects",
+            "learningGoal",
+        ]) {
+            if (updateData.learning[field] !== undefined) {
+                updates[`learning.${field}`] =
+                    updateData.learning[field];
+            }
         }
     }
 
@@ -231,6 +268,116 @@ export const getNearbyUsers = async (userId, limit = 10) => {
         .limit(limit);
 
     return nearbyUsers;
+};
+
+/**
+ * Discover users based on discovery category.
+ */
+export const discoverUsers = async (
+    userId,
+    type,
+    limit = 10,
+    radius = 10
+) => {
+    const currentUser = await User.findById(userId)
+        .select(
+            "discoveryLocation interests discoveryPreferences"
+        );
+
+    if (!currentUser) {
+        throw new ApiError(404, "User not found.");
+    }
+
+    if (
+        !currentUser.discoveryLocation ||
+        !Array.isArray(
+            currentUser.discoveryLocation.coordinates
+        ) ||
+        currentUser.discoveryLocation.coordinates.length !== 2
+    ) {
+        throw new ApiError(
+            400,
+            "Please update your location before discovering users."
+        );
+    }
+
+    const MAX_DISCOVERY_RADIUS_METERS = radius * 1000;
+
+    const baseFilter = {
+        _id: { $ne: userId },
+    };
+
+    const locationFilter = {
+        discoveryLocation: {
+            $near: {
+                $geometry: {
+                    type: "Point",
+                    coordinates:
+                        currentUser.discoveryLocation.coordinates,
+                },
+                $maxDistance:
+                    MAX_DISCOVERY_RADIUS_METERS,
+            },
+        },
+    };
+
+    let categoryFilter = {};
+
+    switch (type) {
+        case "nearby":
+            break;
+
+        case "friends":
+            categoryFilter = {
+                discoveryPreferences: "friends",
+            };
+            break;
+
+        case "professional":
+            categoryFilter = {
+                discoveryPreferences: "professional",
+            };
+            break;
+
+        case "learning":
+            categoryFilter = {
+                discoveryPreferences: "learning",
+            };
+            break;
+
+        case "interests":
+            if (
+                !Array.isArray(currentUser.interests) ||
+                currentUser.interests.length === 0
+            ) {
+                return [];
+            }
+
+            categoryFilter = {
+                interests: {
+                    $in: currentUser.interests,
+                },
+            };
+            break;
+
+        default:
+            throw new ApiError(
+                400,
+                "Invalid discovery type."
+            );
+    }
+
+    const users = await User.find({
+        ...baseFilter,
+        ...locationFilter,
+        ...categoryFilter,
+    })
+        .select(
+            "name gender profilePic bio interests discoveryPreferences professional learning"
+        )
+        .limit(limit);
+
+    return users;
 };
 
 /**
