@@ -27,9 +27,6 @@ export const currentUser = asyncHandler(async (req, res) => {
     );
 });
 
-/**
- * Get a user's public profile.
- */
 export const getUserProfile = asyncHandler(async (req, res) => {
     const user = await getUserById(req.params.userId);
 

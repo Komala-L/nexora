@@ -20,21 +20,6 @@ export const getCurrentUser = async (userId) => {
 };
 
 /**
- * Get a user's public profile.
- */
-export const getUserById = async (userId) => {
-    const user = await User.findById(userId).select(
-        "_id name gender profilePic bio interests"
-    );
-
-    if (!user) {
-        throw new ApiError(404, "User not found.");
-    }
-
-    return user;
-};
-
-/**
  * Update the authenticated user's profile.
  */
 export const updateProfile = async (userId, updateData) => {
@@ -246,4 +231,19 @@ export const getNearbyUsers = async (userId, limit = 10) => {
         .limit(limit);
 
     return nearbyUsers;
+};
+
+/**
+ * Get a user's public profile.
+ */
+export const getUserById = async (userId) => {
+    const user = await User.findById(userId).select(
+        "_id name gender profilePic bio interests"
+    );
+
+    if (!user) {
+        throw new ApiError(404, "User not found.");
+    }
+
+    return user;
 };

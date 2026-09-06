@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { 
-    currentUser,
+    currentUser, 
     getUserProfile, 
     updateUserProfile, 
     updateUserProfileImage, 
