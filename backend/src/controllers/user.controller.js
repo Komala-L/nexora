@@ -2,6 +2,7 @@ import ApiResponse from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { 
     getCurrentUser, 
+    getUserById,
     updateProfile, 
     updateProfileImage, 
     removeProfileImage, 
@@ -22,6 +23,23 @@ export const currentUser = asyncHandler(async (req, res) => {
                 user,
             },
             "Current user fetched successfully"
+        )
+    );
+});
+
+/**
+ * Get a user's public profile.
+ */
+export const getUserProfile = asyncHandler(async (req, res) => {
+    const user = await getUserById(req.params.userId);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                user,
+            },
+            "User profile fetched successfully"
         )
     );
 });

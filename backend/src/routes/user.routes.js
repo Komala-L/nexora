@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { 
-    currentUser, 
+    currentUser,
+    getUserProfile, 
     updateUserProfile, 
     updateUserProfileImage, 
     removeUserProfileImage, 
@@ -15,6 +16,7 @@ import { updateProfileSchema, updateLocationSchema, nearbyUsersSchema } from "..
 const router = Router();
 
 router.get("/me", verifyJWT, currentUser);
+router.get("/:userId", verifyJWT, getUserProfile);
 router.patch("/profile", verifyJWT, validate(updateProfileSchema), updateUserProfile);
 router.patch("/profile/image", verifyJWT, upload.single("image"), updateUserProfileImage);
 router.delete("/profile/image", verifyJWT, removeUserProfileImage);
