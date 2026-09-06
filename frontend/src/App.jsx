@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
 import Home from "./pages/user/Home";
 import Requests from "./pages/user/Requests";
+import Connections from "./pages/user/Connections";
 
 const App = () => {
     return (
@@ -36,6 +37,11 @@ const App = () => {
                     <Route
                         path="/requests"
                         element={<Requests />}
+                    />
+
+                    <Route 
+                        path="connections" 
+                        element={<Connections />} 
                     />
                 </Route>
             </Route>
