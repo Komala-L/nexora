@@ -1,4 +1,5 @@
 import User from "../models/user.model.js";
+import Connection from "../models/connection.model.js";
 import ApiError from "../utils/apiError.js";
 import logger from "../utils/logger.js";
 import { uploadImage, deleteImage } from "./cloudinary.service.js";
@@ -270,6 +271,61 @@ export const getNearbyUsers = async (userId, limit = 10) => {
     return nearbyUsers;
 };
 
+const addConnectionStatus = async (userId, users) => {
+    if (!users.length) {
+        return [];
+    }
+
+    const userIds = users.map((user) => user._id);
+
+    const connections = await Connection.find({
+        $or: [
+            {
+                requester: userId,
+                recipient: { $in: userIds },
+            },
+            {
+                recipient: userId,
+                requester: { $in: userIds },
+            },
+        ],
+    })
+        .select("requester recipient status")
+        .lean();
+
+    const connectionMap = new Map();
+
+    for (const connection of connections) {
+        const otherUserId =
+            connection.requester.toString() === userId.toString()
+                ? connection.recipient.toString()
+                : connection.requester.toString();
+
+        let connectionStatus;
+
+        if (connection.status === "accepted") {
+            connectionStatus = "accepted";
+        } else if (
+            connection.requester.toString() === userId.toString()
+        ) {
+            connectionStatus = "pending_sent";
+        } else {
+            connectionStatus = "pending_received";
+        }
+
+        connectionMap.set(
+            otherUserId,
+            connectionStatus
+        );
+    }
+
+    return users.map((user) => ({
+        ...user,
+        connectionStatus:
+            connectionMap.get(user._id.toString()) || "none",
+    }));
+};
+
 /**
  * Discover users based on discovery category.
  */
@@ -375,9 +431,10 @@ export const discoverUsers = async (
         .select(
             "name gender profilePic bio interests discoveryPreferences professional learning"
         )
-        .limit(limit);
+        .limit(limit)
+        .lean();
 
-    return users;
+return addConnectionStatus(userId, users);
 };
 
 /**

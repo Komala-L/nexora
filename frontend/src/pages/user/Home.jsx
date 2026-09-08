@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
-    getNearbyUsers,
+    discoverUsers,
     updateUserLocation,
 } from "../../services/user.service";
 import {
@@ -22,7 +22,9 @@ import {
 const Home = () => {
     const { user } = useAuth();
 
-    const [nearbyUsers, setNearbyUsers] = useState([]);
+    const [discoveredUsers, setDiscoveredUsers] = useState([]);
+    const [discoveryType, setDiscoveryType] = useState("nearby");
+    const [radius, setRadius] = useState(10);
     const [isLoading, setIsLoading] = useState(true);
     const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
     const [locationRequired, setLocationRequired] = useState(false);
@@ -31,31 +33,40 @@ const Home = () => {
     const [connectionStatuses, setConnectionStatuses] = useState({});
     const [connectingUserId, setConnectingUserId] = useState(null);
 
-    const fetchNearbyUsers = async () => {
+    const fetchDiscoveredUsers = async (
+        type = discoveryType,
+        selectedRadius = radius
+    ) => {
         try {
             setIsLoading(true);
             setError("");
             setLocationRequired(false);
 
-            const response = await getNearbyUsers(10);
+            const response = await discoverUsers(
+                type,
+                10,
+                selectedRadius
+            );
 
-            setNearbyUsers(response.data.users || []);
+            setDiscoveredUsers(
+                response.data.users || []
+            );
         } catch (error) {
             console.error(
-                "Failed to fetch nearby users:",
+                "Failed to discover users:",
                 error
             );
 
             if (
                 error.message ===
-                "Please update your location before searching for nearby users."
+                "Please update your location before discovering users."
             ) {
                 setLocationRequired(true);
-                setNearbyUsers([]);
+                setDiscoveredUsers([]);
             } else {
                 setError(
                     error.message ||
-                    "Failed to load nearby users."
+                    "Failed to discover users."
                 );
             }
         } finally {
@@ -230,7 +241,7 @@ const Home = () => {
     };
 
     useEffect(() => {
-        fetchNearbyUsers();
+        fetchDiscoveredUsers();
         fetchConnectionStatuses();
     }, []);
 
@@ -256,7 +267,7 @@ const Home = () => {
                         latitude
                     );
 
-                    await fetchNearbyUsers();
+                    await fetchDiscoveredUsers();
                 } catch (error) {
                     console.error(
                         "Failed to update location:",
@@ -330,13 +341,13 @@ const Home = () => {
 
                         <div>
                             <p className="text-sm text-slate-500">
-                                Nearby people
+                                People discovered
                             </p>
 
                             <p className="mt-1 text-2xl font-bold text-slate-900">
                                 {isLoading
                                     ? "—"
-                                    : nearbyUsers.length}
+                                    : discoveredUsers.length}
                             </p>
                         </div>
                     </div>
@@ -363,44 +374,144 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* Nearby Users */}
+            {/* Discovery */}
             <section>
-                <div className="mb-5 flex items-center justify-between">
+                <div className="mb-5">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">
-                            People near you
+                        <p className="text-sm font-semibold text-indigo-600">
+                            Discovery
+                        </p>
+
+                        <h2 className="mt-1 text-2xl font-bold text-slate-900">
+                            Find your people
                         </h2>
 
                         <p className="mt-1 text-sm text-slate-500">
-                            Discover people who are nearby.
+                            Discover people based on your interests,
+                            goals, and location.
                         </p>
                     </div>
+                </div>
 
-                    <button
-                        type="button"
-                        className="text-sm font-semibold text-indigo-600 transition hover:text-indigo-700"
-                    >
-                        View all
-                    </button>
+                {/* Discovery Controls */}
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+                        {/* Categories */}
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                {
+                                    value: "nearby",
+                                    label: "Nearby",
+                                    icon: MapPin,
+                                },
+                                {
+                                    value: "friends",
+                                    label: "Friends",
+                                    icon: Users,
+                                },
+                                {
+                                    value: "professional",
+                                    label: "Professional",
+                                    icon: CheckCircle2,
+                                },
+                                {
+                                    value: "learning",
+                                    label: "Learning",
+                                    icon: CheckCircle2,
+                                },
+                                {
+                                    value: "interests",
+                                    label: "Interests",
+                                    icon: CheckCircle2,
+                                },
+                            ].map((category) => {
+                                const Icon = category.icon;
+                                const isActive =
+                                    discoveryType === category.value;
+
+                                return (
+                                    <button
+                                        key={category.value}
+                                        type="button"
+                                        onClick={() => {
+                                            setDiscoveryType(
+                                                category.value
+                                            );
+
+                                            fetchDiscoveredUsers(
+                                                category.value,
+                                                radius
+                                            );
+                                        }}
+                                        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                                            isActive
+                                                ? "bg-indigo-600 text-white shadow-sm"
+                                                : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                        }`}
+                                    >
+                                        <Icon size={16} />
+                                        {category.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Radius */}
+                        <div className="flex items-center gap-3">
+                            <label
+                                htmlFor="discovery-radius"
+                                className="text-sm font-medium text-slate-500"
+                            >
+                                Radius
+                            </label>
+
+                            <select
+                                id="discovery-radius"
+                                value={radius}
+                                onChange={(event) => {
+                                    const newRadius = Number(
+                                        event.target.value
+                                    );
+
+                                    setRadius(newRadius);
+
+                                    fetchDiscoveredUsers(
+                                        discoveryType,
+                                        newRadius
+                                    );
+                                }}
+                                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                            >
+                                <option value={10}>10 km</option>
+                                <option value={25}>25 km</option>
+                                <option value={50}>50 km</option>
+                                <option value={100}>100 km</option>
+                                <option value={250}>250 km</option>
+                                <option value={500}>500 km</option>
+                                <option value={1000}>1000 km</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Loading */}
                 {isLoading && (
-                    <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                    <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
                         <Loader2
                             size={22}
                             className="mx-auto animate-spin text-indigo-600"
                         />
 
                         <p className="mt-3 text-sm text-slate-500">
-                            Finding people near you...
+                            Discovering people...
                         </p>
                     </div>
                 )}
 
                 {/* Location Required */}
                 {!isLoading && locationRequired && (
-                    <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-sm sm:p-8">
+                    <div className="mt-5 rounded-2xl border border-indigo-100 bg-white p-6 shadow-sm sm:p-8">
                         <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
                             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
                                 <MapPin size={25} />
@@ -408,14 +519,14 @@ const Home = () => {
 
                             <div className="flex-1">
                                 <h3 className="font-semibold text-slate-900">
-                                    Enable location to discover people nearby
+                                    Enable location to discover people
                                 </h3>
 
                                 <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
                                     Nexora uses your location to find
-                                    people around you. Your exact
-                                    location is kept protected and is
-                                    not shown to other users.
+                                    relevant people around you. Your exact
+                                    location is kept protected and is not
+                                    shown to other users.
                                 </p>
 
                                 {locationError && (
@@ -436,13 +547,11 @@ const Home = () => {
                                                 size={17}
                                                 className="animate-spin"
                                             />
-
                                             Updating location...
                                         </>
                                     ) : (
                                         <>
                                             <MapPin size={17} />
-
                                             Enable Location
                                         </>
                                     )}
@@ -456,56 +565,61 @@ const Home = () => {
                 {!isLoading &&
                     !locationRequired &&
                     error && (
-                        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
+                        <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
                             <p className="text-sm text-red-600">
                                 {error}
                             </p>
                         </div>
                     )}
 
-                {/* No Users */}
+                {/* Empty */}
                 {!isLoading &&
                     !locationRequired &&
                     !error &&
-                    nearbyUsers.length === 0 && (
-                        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                    discoveredUsers.length === 0 && (
+                        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
                             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-                                <CheckCircle2
+                                <Users
                                     size={20}
                                     className="text-slate-500"
                                 />
                             </div>
 
                             <h3 className="mt-4 font-semibold text-slate-900">
-                                No one nearby yet
+                                No people found
                             </h3>
 
                             <p className="mt-1 text-sm text-slate-500">
-                                There are currently no discoverable
-                                people within your area.
+                                Try another discovery category or increase
+                                your search radius.
                             </p>
                         </div>
                     )}
 
-                {/* Nearby Users */}
+                {/* Discovered Users */}
                 {!isLoading &&
                     !locationRequired &&
                     !error &&
-                    nearbyUsers.length > 0 && (
-                        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                            {nearbyUsers.map((nearbyUser) => {
+                    discoveredUsers.length > 0 && (
+                        <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                            {discoveredUsers.map((discoveredUser) => {
                                 const initial =
-                                    nearbyUser.name
+                                    discoveredUser.name
                                         ?.charAt(0)
                                         .toUpperCase() || "U";
 
-                                const connectionStatus = connectionStatuses[nearbyUser._id]?.status;
+                                const connectionStatus =
+                                    connectionStatuses[
+                                        discoveredUser._id
+                                    ]?.status;
 
-                                const isConnecting = connectingUserId === nearbyUser._id;
+                                const isConnecting =
+                                    connectingUserId ===
+                                    discoveredUser._id;
 
                                 return (
                                     <div
-                                        key={nearbyUser._id}
+                                        key={discoveredUser._id}
                                         className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                                     >
                                         <div className="flex items-center gap-4">
@@ -515,26 +629,50 @@ const Home = () => {
 
                                             <div className="min-w-0">
                                                 <h3 className="truncate font-semibold text-slate-900">
-                                                    {nearbyUser.name}
+                                                    {discoveredUser.name}
                                                 </h3>
 
                                                 <p className="mt-1 text-sm capitalize text-slate-500">
-                                                    {nearbyUser.gender ||
+                                                    {discoveredUser.gender ||
                                                         "Nexora user"}
                                                 </p>
                                             </div>
                                         </div>
-                                        
-                                        {connectionStatus === "received" ? (
+
+                                        {discoveredUser.bio && (
+                                            <p className="mt-4 line-clamp-2 text-sm leading-6 text-slate-500">
+                                                {discoveredUser.bio}
+                                            </p>
+                                        )}
+
+                                        {discoveredUser.interests?.length >
+                                            0 && (
+                                            <div className="mt-4 flex flex-wrap gap-1.5">
+                                                {discoveredUser.interests
+                                                    .slice(0, 3)
+                                                    .map((interest) => (
+                                                        <span
+                                                            key={interest}
+                                                            className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600"
+                                                        >
+                                                            {interest}
+                                                        </span>
+                                                    ))}
+                                            </div>
+                                        )}
+
+                                        {/* Connection Actions */}
+                                        {connectionStatus ===
+                                        "received" ? (
                                             <div className="mt-5 flex gap-2">
                                                 <button
                                                     type="button"
                                                     disabled={isConnecting}
                                                     onClick={() =>
                                                         handleAccept(
-                                                            nearbyUser._id,
+                                                            discoveredUser._id,
                                                             connectionStatuses[
-                                                                nearbyUser._id
+                                                                discoveredUser._id
                                                             ].connectionId
                                                         )
                                                     }
@@ -550,9 +688,9 @@ const Home = () => {
                                                     disabled={isConnecting}
                                                     onClick={() =>
                                                         handleReject(
-                                                            nearbyUser._id,
+                                                            discoveredUser._id,
                                                             connectionStatuses[
-                                                                nearbyUser._id
+                                                                discoveredUser._id
                                                             ].connectionId
                                                         )
                                                     }
@@ -565,26 +703,34 @@ const Home = () => {
                                             <button
                                                 type="button"
                                                 disabled={
-                                                    connectionStatus === "pending" ||
-                                                    connectionStatus === "connected" ||
+                                                    connectionStatus ===
+                                                        "pending" ||
+                                                    connectionStatus ===
+                                                        "connected" ||
                                                     isConnecting
                                                 }
                                                 onClick={() =>
-                                                    handleConnect(nearbyUser._id)
+                                                    handleConnect(
+                                                        discoveredUser._id
+                                                    )
                                                 }
                                                 className={`mt-5 w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
-                                                    connectionStatus === "connected"
+                                                    connectionStatus ===
+                                                    "connected"
                                                         ? "cursor-default bg-emerald-50 text-emerald-700"
-                                                        : connectionStatus === "pending"
+                                                        : connectionStatus ===
+                                                        "pending"
                                                         ? "cursor-default bg-slate-100 text-slate-600"
                                                         : "bg-indigo-600 text-white hover:bg-indigo-500"
                                                 }`}
                                             >
                                                 {isConnecting
                                                     ? "Connecting..."
-                                                    : connectionStatus === "connected"
+                                                    : connectionStatus ===
+                                                    "connected"
                                                     ? "Connected"
-                                                    : connectionStatus === "pending"
+                                                    : connectionStatus ===
+                                                    "pending"
                                                     ? "Pending"
                                                     : "Connect"}
                                             </button>

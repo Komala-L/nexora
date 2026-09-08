@@ -178,6 +178,19 @@ export const nearbyUsersSchema = z.object({
 /* Discovery */
 
 export const discoverUsersSchema = z.object({
+    type: z.enum(
+        [
+            "nearby",
+            "friends",
+            "professional",
+            "learning",
+            "interests",
+        ],
+        {
+            message: "Invalid discovery type.",
+        }
+    ),
+
     limit: z.coerce
         .number()
         .int("Limit must be an integer.")

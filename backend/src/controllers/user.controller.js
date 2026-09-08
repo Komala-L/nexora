@@ -159,9 +159,8 @@ export const nearbyUsers = asyncHandler(async (req, res) => {
  * Discover users based on discovery category.
  */
 export const discoverUsersController = asyncHandler(async (req, res) => {
-    const { type } = req.params;
-
     const {
+        type,
         limit = 10,
         radius = 10,
     } = req.validatedQuery;

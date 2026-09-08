@@ -22,7 +22,7 @@ router.patch("/profile/image", verifyJWT, upload.single("image"), updateUserProf
 router.delete("/profile/image", verifyJWT, removeUserProfileImage);
 router.patch("/location", verifyJWT, validate(updateLocationSchema), updateUserLocation);
 router.get("/nearby", verifyJWT, validateQuery(nearbyUsersSchema), nearbyUsers);
-router.get("/discover/:type", verifyJWT, validateQuery(discoverUsersSchema), discoverUsersController);
+router.get("/discover", verifyJWT, validateQuery(discoverUsersSchema), discoverUsersController);
 router.get("/:userId", verifyJWT, getUserProfile);
 
 export default router;

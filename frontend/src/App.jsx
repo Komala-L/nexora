@@ -7,6 +7,7 @@ import Home from "./pages/user/Home";
 import Requests from "./pages/user/Requests";
 import Connections from "./pages/user/Connections";
 import Profile from "./pages/user/Profile";
+import Discover from "./pages/user/Discover";
 
 const App = () => {
     return (
@@ -35,6 +36,11 @@ const App = () => {
                         element={<Home />}
                     />
 
+                    <Route
+                        path="/discover"
+                        element={<Discover />}
+                    />
+                    
                     <Route
                         path="/requests"
                         element={<Requests />}
