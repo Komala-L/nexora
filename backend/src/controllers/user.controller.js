@@ -29,7 +29,10 @@ export const currentUser = asyncHandler(async (req, res) => {
 });
 
 export const getUserProfile = asyncHandler(async (req, res) => {
-    const user = await getUserById(req.params.userId);
+    const user = await getUserById(
+        req.params.userId,
+        req.user._id
+    );
 
     return res.status(200).json(
         new ApiResponse(

@@ -5,6 +5,15 @@ import logger from "../utils/logger.js";
 import { uploadImage, deleteImage } from "./cloudinary.service.js";
 import { generateProtectedLocation } from "../utils/location.utils.js";
 
+const generatePairKey = (userId1, userId2) => {
+    const [firstUserId, secondUserId] = [
+        userId1.toString(),
+        userId2.toString(),
+    ].sort();
+
+    return `${firstUserId}:${secondUserId}`;
+};
+
 /**
  * Get the authenticated user's profile.
  */
@@ -440,7 +449,7 @@ return addConnectionStatus(userId, users);
 /**
  * Get a user's public profile.
  */
-export const getUserById = async (userId) => {
+export const getUserById = async (userId, currentUserId) => {
     const user = await User.findById(userId).select(
         "_id name gender profilePic bio interests"
     );
@@ -449,5 +458,43 @@ export const getUserById = async (userId) => {
         throw new ApiError(404, "User not found.");
     }
 
-    return user;
+    const pairKey = generatePairKey(
+        currentUserId,
+        userId
+    );
+
+    const connection = await Connection.findOne({
+        pairKey,
+    }).select(
+        "_id requester recipient status"
+    );
+
+    let connectionStatus = "none";
+    let connectionDirection = null;
+    let connectionId = null;
+
+    if (connection) {
+        connectionId = connection._id;
+
+        if (connection.status === "accepted") {
+            connectionStatus = "connected";
+        } else if (connection.status === "pending") {
+            connectionStatus = "pending";
+
+            connectionDirection =
+                connection.requester.toString() ===
+                currentUserId.toString()
+                    ? "sent"
+                    : "received";
+        }
+    }
+
+    return {
+        ...user.toObject(),
+        connection: {
+            connectionId,
+            status: connectionStatus,
+            direction: connectionDirection,
+        },
+    };
 };

@@ -12,6 +12,12 @@ import {
 } from "lucide-react";
 
 import { getUserProfile } from "../../services/user.service";
+import {
+    sendConnectionRequest,
+    acceptConnectionRequest,
+    rejectConnectionRequest,
+    cancelConnectionRequest,
+} from "../../services/connection.service";
 
 const Profile = () => {
     const { userId } = useParams();
@@ -20,6 +26,7 @@ const Profile = () => {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
+    const [isConnecting, setIsConnecting] = useState(false);
 
     const fetchProfile = async () => {
         try {
@@ -44,6 +51,144 @@ const Profile = () => {
         }
     };
 
+    const handleConnect = async () => {
+        try {
+            setIsConnecting(true);
+
+            const response = await sendConnectionRequest(userId);
+
+            const connection = response.data?.connection;
+
+            if (connection?.status === "accepted") {
+                setUser((previousUser) => ({
+                    ...previousUser,
+                    connection: {
+                        connectionId: connection._id,
+                        status: "connected",
+                        direction: null,
+                    },
+                }));
+            } else {
+                setUser((previousUser) => ({
+                    ...previousUser,
+                    connection: {
+                        connectionId: connection?._id || null,
+                        status: "pending",
+                        direction: "sent",
+                    },
+                }));
+            }
+        } catch (error) {
+            console.error(
+                "Failed to send connection request:",
+                error
+            );
+
+            setError(
+                error.message ||
+                    "Failed to send connection request."
+            );
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+
+    const handleAccept = async () => {
+        try {
+            setIsConnecting(true);
+
+            const connectionId =
+                user.connection?.connectionId;
+
+            await acceptConnectionRequest(connectionId);
+
+            setUser((previousUser) => ({
+                ...previousUser,
+                connection: {
+                    connectionId,
+                    status: "connected",
+                    direction: null,
+                },
+            }));
+        } catch (error) {
+            console.error(
+                "Failed to accept connection request:",
+                error
+            );
+
+            setError(
+                error.message ||
+                    "Failed to accept connection request."
+            );
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+
+    const handleReject = async () => {
+        try {
+            setIsConnecting(true);
+
+            const connectionId =
+                user.connection?.connectionId;
+
+            await rejectConnectionRequest(connectionId);
+
+            setUser((previousUser) => ({
+                ...previousUser,
+                connection: {
+                    connectionId: null,
+                    status: "none",
+                    direction: null,
+                },
+            }));
+        } catch (error) {
+            console.error(
+                "Failed to reject connection request:",
+                error
+            );
+
+            setError(
+                error.message ||
+                    "Failed to reject connection request."
+            );
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+
+    const handleCancel = async () => {
+        try {
+            setIsConnecting(true);
+
+            const connectionId =
+                user.connection?.connectionId;
+
+            await cancelConnectionRequest(connectionId);
+
+            setUser((previousUser) => ({
+                ...previousUser,
+                connection: {
+                    connectionId: null,
+                    status: "none",
+                    direction: null,
+                },
+            }));
+        } catch (error) {
+            console.error(
+                "Failed to cancel connection request:",
+                error
+            );
+
+            setError(
+                error.message ||
+                    "Failed to cancel connection request."
+            );
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+    
     useEffect(() => {
         if (userId) {
             fetchProfile();
@@ -262,10 +407,28 @@ const Profile = () => {
                                     {user.name}
                                 </h1>
 
+                                {user.connection?.status === "connected" && (
                                 <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-600">
                                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                                     Connected
                                 </span>
+                            )}
+
+                            {user.connection?.status === "pending" &&
+                                user.connection?.direction === "sent" && (
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-100 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-600">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                        Request Pending
+                                    </span>
+                                )}
+
+                            {user.connection?.status === "pending" &&
+                                user.connection?.direction === "received" && (
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-600">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                                        Wants to Connect
+                                    </span>
+                                )}
                             </div>
 
                             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-500">
@@ -368,22 +531,124 @@ const Profile = () => {
                         </div>
 
                         <div>
-                            <p className="text-sm font-bold text-slate-900">
-                                You're connected
-                            </p>
+                            {user.connection?.status === "connected" && (
+                                <>
+                                    <p className="text-sm font-bold text-slate-900">
+                                        You're connected
+                                    </p>
 
-                            <p className="mt-1 text-sm text-slate-500">
-                                You and {user.name} are part
-                                of each other's Nexora
-                                network.
-                            </p>
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        You and {user.name} are part
+                                        of each other's Nexora
+                                        network.
+                                    </p>
+                                </>
+                            )}
+
+                            {user.connection?.status === "none" && (
+                                <>
+                                    <p className="text-sm font-bold text-slate-900">
+                                        Connect with {user.name}
+                                    </p>
+
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        Send a connection request to
+                                        grow your Nexora network.
+                                    </p>
+                                </>
+                            )}
+
+                            {user.connection?.status === "pending" &&
+                                user.connection?.direction === "sent" && (
+                                    <>
+                                        <p className="text-sm font-bold text-slate-900">
+                                            Connection request sent
+                                        </p>
+
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            Waiting for {user.name} to
+                                            accept your request.
+                                        </p>
+                                    </>
+                                )}
+
+                            {user.connection?.status === "pending" &&
+                                user.connection?.direction === "received" && (
+                                    <>
+                                        <p className="text-sm font-bold text-slate-900">
+                                            {user.name} wants to connect
+                                        </p>
+
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            Accept or reject their
+                                            connection request.
+                                        </p>
+                                    </>
+                                )}
                         </div>
                     </div>
 
-                    <span className="inline-flex w-fit items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm">
-                        <span className="h-2 w-2 rounded-full bg-white" />
-                        Connected
-                    </span>
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-2">
+                        {user.connection?.status === "none" && (
+                            <button
+                                type="button"
+                                disabled={isConnecting}
+                                onClick={handleConnect}
+                                className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {isConnecting
+                                    ? "Connecting..."
+                                    : "Connect"}
+                            </button>
+                        )}
+
+                        {user.connection?.status === "pending" &&
+                            user.connection?.direction === "sent" && (
+                                <button
+                                    type="button"
+                                    disabled={isConnecting}
+                                    onClick={handleCancel}
+                                    className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {isConnecting
+                                        ? "Cancelling..."
+                                        : "Cancel Request"}
+                                </button>
+                            )}
+
+                        {user.connection?.status === "pending" &&
+                            user.connection?.direction === "received" && (
+                                <>
+                                    <button
+                                        type="button"
+                                        disabled={isConnecting}
+                                        onClick={handleAccept}
+                                        className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {isConnecting
+                                            ? "Processing..."
+                                            : "Accept"}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        disabled={isConnecting}
+                                        onClick={handleReject}
+                                        className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        Reject
+                                    </button>
+                                </>
+                            )}
+
+                        {user.connection?.status === "connected" && (
+                            <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm">
+                                <span className="h-2 w-2 rounded-full bg-white" />
+                                Connected
+                            </span>
+                        )}
+                    </div>
                 </div>
             </section>
         </div>
