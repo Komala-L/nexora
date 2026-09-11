@@ -96,3 +96,47 @@ export const getUserProfile = async (userId) => {
 
     return data;
 };
+
+export const getCurrentUser = async () => {
+    const response = await fetch(
+        `${API_BASE_URL}/users/me`,
+        {
+            method: "GET",
+            credentials: "include",
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message || "Failed to fetch current user"
+        );
+    }
+
+    return data;
+};
+
+export const updateProfile = async (profileData) => {
+    const response = await fetch(
+        `${API_BASE_URL}/users/profile`,
+        {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify(profileData),
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message || "Failed to update profile"
+        );
+    }
+
+    return data;
+};

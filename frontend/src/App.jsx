@@ -8,6 +8,7 @@ import Requests from "./pages/user/Requests";
 import Connections from "./pages/user/Connections";
 import Profile from "./pages/user/Profile";
 import Discover from "./pages/user/Discover";
+import MyProfile from "./pages/user/MyProfile";
 
 const App = () => {
     return (
@@ -49,6 +50,11 @@ const App = () => {
                     <Route 
                         path="connections" 
                         element={<Connections />} 
+                    />
+
+                    <Route
+                        path="/profile"
+                        element={<MyProfile />}
                     />
 
                      <Route
