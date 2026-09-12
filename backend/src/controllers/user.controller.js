@@ -2,11 +2,13 @@ import ApiResponse from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { 
     getCurrentUser, 
+    getUserById,
     updateProfile, 
     updateProfileImage, 
     removeProfileImage, 
     updateLocation, 
-    getNearbyUsers
+    getNearbyUsers,
+    discoverUsers
 } from "../services/user.service.js";
 
 /**
@@ -22,6 +24,23 @@ export const currentUser = asyncHandler(async (req, res) => {
                 user,
             },
             "Current user fetched successfully"
+        )
+    );
+});
+
+export const getUserProfile = asyncHandler(async (req, res) => {
+    const user = await getUserById(
+        req.params.userId,
+        req.user._id
+    );
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                user,
+            },
+            "User profile fetched successfully"
         )
     );
 });
@@ -135,6 +154,34 @@ export const nearbyUsers = asyncHandler(async (req, res) => {
                 users,
             },
             "Nearby users fetched successfully"
+        )
+    );
+});
+
+/**
+ * Discover users based on discovery category.
+ */
+export const discoverUsersController = asyncHandler(async (req, res) => {
+    const {
+        type,
+        limit = 10,
+        radius = 10,
+    } = req.validatedQuery;
+
+    const users = await discoverUsers(
+        req.user._id,
+        type,
+        limit,
+        radius
+    );
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                users,
+            },
+            "Users discovered successfully"
         )
     );
 });

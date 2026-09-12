@@ -62,6 +62,57 @@ const userSchema = new mongoose.Schema({
             message: "A user can have a maximum of 12 interests."
         }
     },
+    discoveryPreferences: {
+        type: [String],
+        enum: ["friends", "professional", "learning"],
+        default: ["friends"],
+    },
+    professional: {
+        role: {
+            type: String,
+            maxlength: 80,
+            trim: true,
+        },
+
+        company: {
+            type: String,
+            maxlength: 100,
+            trim: true,
+        },
+
+        skills: {
+            type: [String],
+            validate: {
+                validator: function (value) {
+                    return value.length <= 15;
+                },
+                message: "A user can have a maximum of 15 skills.",
+            },
+        },
+
+        industry: {
+            type: String,
+            maxlength: 80,
+            trim: true,
+        },
+    },
+    learning: {
+        subjects: {
+            type: [String],
+            validate: {
+                validator: function (value) {
+                    return value.length <= 10;
+                },
+                message: "A user can have a maximum of 10 learning subjects.",
+            },
+        },
+
+        learningGoal: {
+            type: String,
+            maxlength: 150,
+            trim: true,
+        },
+    },
     location: {
         type: {
             type: String,

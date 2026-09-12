@@ -20,24 +20,94 @@ const interestsSchema = z
     )
     .max(12, "A user can have a maximum of 12 interests.");
 
+const discoveryPreferencesSchema = z
+    .array(
+        z.enum(["friends", "professional", "learning"])
+    )
+    .min(1, "At least one discovery preference is required.")
+    .max(3, "A user can have a maximum of 3 discovery preferences.");
+
+const professionalSchema = z.object({
+    role: z
+        .string()
+        .trim()
+        .max(80, "Role cannot exceed 80 characters.")
+        .optional(),
+
+    company: z
+        .string()
+        .trim()
+        .max(100, "Company cannot exceed 100 characters.")
+        .optional(),
+
+    skills: z
+        .array(
+            z
+                .string()
+                .trim()
+                .min(1, "Skill cannot be empty.")
+        )
+        .max(15, "A user can have a maximum of 15 skills.")
+        .optional(),
+
+    industry: z
+        .string()
+        .trim()
+        .max(80, "Industry cannot exceed 80 characters.")
+        .optional(),
+}).strict();
+
+const learningSchema = z.object({
+    subjects: z
+        .array(
+            z
+                .string()
+                .trim()
+                .min(1, "Subject cannot be empty.")
+        )
+        .max(10, "A user can have a maximum of 10 learning subjects.")
+        .optional(),
+
+    learningGoal: z
+        .string()
+        .trim()
+        .max(150, "Learning goal cannot exceed 150 characters.")
+        .optional(),
+}).strict();
 
 /* 1. Update Profile */
 
-export const updateProfileSchema = z.object({
-    name: nameSchema.optional(),
-    bio: bioSchema.optional(),
-    interests: interestsSchema.optional(),
-})
+export const updateProfileSchema = z
+    .object({
+        name: nameSchema.optional(),
+
+        bio: bioSchema.optional(),
+
+        interests: interestsSchema.optional(),
+
+        discoveryPreferences:
+            discoveryPreferencesSchema.optional(),
+
+        professional:
+            professionalSchema.optional(),
+
+        learning:
+            learningSchema.optional(),
+    })
+    .strict()
+    .refine(
+        (data) =>
+            data.name !== undefined ||
+            data.bio !== undefined ||
+            data.interests !== undefined ||
+            data.discoveryPreferences !== undefined ||
+            data.professional !== undefined ||
+            data.learning !== undefined,
+        {
+            message: "At least one profile field must be provided.",
+        }
+    )
 .strict()
-.refine(
-    (data) =>
-        data.name !== undefined ||
-        data.bio !== undefined ||
-        data.interests !== undefined,
-    {
-        message: "At least one profile field must be provided.",
-    }
-);
 
 
 /* 2. Update Profile Image */
@@ -93,5 +163,36 @@ export const nearbyUsersSchema = z.object({
         .int("Limit must be an integer.")
         .min(1, "Limit must be at least 1.")
         .max(50, "Limit cannot exceed 50.")
+        .default(10),
+}).strict();
+
+/* Discovery */
+
+export const discoverUsersSchema = z.object({
+    type: z.enum(
+        [
+            "nearby",
+            "friends",
+            "professional",
+            "learning",
+            "interests",
+        ],
+        {
+            message: "Invalid discovery type.",
+        }
+    ),
+
+    limit: z.coerce
+        .number()
+        .int("Limit must be an integer.")
+        .min(1, "Limit must be at least 1.")
+        .max(50, "Limit cannot exceed 50.")
+        .default(10),
+
+    radius: z.coerce
+        .number()
+        .int("Radius must be an integer.")
+        .min(1, "Radius must be at least 1 km.")
+        .max(500, "Radius cannot exceed 500 km.")
         .default(10),
 }).strict();
