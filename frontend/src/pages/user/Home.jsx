@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     CheckCircle2,
     Loader2,
@@ -21,7 +22,8 @@ import {
 
 const Home = () => {
     const { user } = useAuth();
-
+    const navigate = useNavigate();
+    
     const [discoveredUsers, setDiscoveredUsers] = useState([]);
     const [discoveryType, setDiscoveryType] = useState("nearby");
     const [radius, setRadius] = useState(10);
@@ -623,9 +625,17 @@ const Home = () => {
                                         className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-lg font-semibold text-indigo-700">
+                                            {discoveredUser.profilePic?.url ? (
+                                            <img
+                                                src={discoveredUser.profilePic.url}
+                                                alt={discoveredUser.name || "User"}
+                                                className="h-12 w-12 shrink-0 rounded-2xl object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-lg font-semibold text-indigo-700">
                                                 {initial}
                                             </div>
+                                        )}
 
                                             <div className="min-w-0">
                                                 <h3 className="truncate font-semibold text-slate-900">
@@ -660,6 +670,17 @@ const Home = () => {
                                                     ))}
                                             </div>
                                         )}
+                                        
+                                        <div className="mt-5 flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                navigate(`/users/${discoveredUser._id}`)
+                                            }
+                                            className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-indigo-600"
+                                        >
+                                            View Profile
+                                        </button>
 
                                         {/* Connection Actions */}
                                         {connectionStatus ===
@@ -735,6 +756,7 @@ const Home = () => {
                                                     : "Connect"}
                                             </button>
                                         )}
+                                        </div>
                                     </div>
                                 );
                             })}

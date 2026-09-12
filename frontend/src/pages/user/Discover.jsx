@@ -281,8 +281,18 @@ const Discover = () => {
                                         className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-lg font-semibold text-indigo-700">
-                                                {initial}
+                                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-indigo-100">
+                                                {discoveredUser.profilePic?.url ? (
+                                                    <img
+                                                        src={discoveredUser.profilePic.url}
+                                                        alt={`${discoveredUser.name}'s profile`}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-indigo-700">
+                                                        {initial}
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <div className="min-w-0">
