@@ -9,9 +9,15 @@ import {
     Compass,
     Save,
     LoaderCircle,
+    Camera,
+    Trash2,
 } from "lucide-react";
 
-import { updateProfile } from "../../services/user.service";
+import {
+    updateProfile,
+    updateUserProfileImage,
+    removeUserProfileImage,
+} from "../../services/user.service";
 
 const discoveryOptions = [
     {
@@ -56,6 +62,9 @@ const EditProfileModal = ({
 
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState("");
+
+    const [isImageUpdating, setIsImageUpdating] = useState(false);
+    const [imageError, setImageError] = useState("");
 
     useEffect(() => {
         setFormData({
@@ -330,6 +339,77 @@ const EditProfileModal = ({
         }
     };
 
+    const handleProfileImageChange = async (event) => {
+        const file = event.target.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        setImageError("");
+
+        try {
+            setIsImageUpdating(true);
+
+            const response =
+                await updateUserProfileImage(file);
+
+            const updatedUser =
+                response.data?.user;
+
+            if (updatedUser) {
+                onUpdated(updatedUser);
+            }
+        } catch (error) {
+            console.error(
+                "Failed to update profile picture:",
+                error
+            );
+
+            setImageError(
+                error.message ||
+                    "Failed to update profile picture."
+            );
+        } finally {
+            setIsImageUpdating(false);
+            event.target.value = "";
+        }
+    };
+
+    const handleRemoveProfileImage = async () => {
+        if (!user?.profilePic?.url) {
+            return;
+        }
+
+        setImageError("");
+
+        try {
+            setIsImageUpdating(true);
+
+            const response =
+                await removeUserProfileImage();
+
+            const updatedUser =
+                response.data?.user;
+
+            if (updatedUser) {
+                onUpdated(updatedUser);
+            }
+        } catch (error) {
+            console.error(
+                "Failed to remove profile picture:",
+                error
+            );
+
+            setImageError(
+                error.message ||
+                    "Failed to remove profile picture."
+            );
+        } finally {
+            setIsImageUpdating(false);
+        }
+    };
+
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
@@ -368,6 +448,113 @@ const EditProfileModal = ({
                     >
                         <X size={20} />
                     </button>
+                </div>
+
+                {/* PROFILE PICTURE */}
+
+                <div className="border-b border-slate-200 px-6 py-5 sm:px-7">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                        {/* AVATAR */}
+
+                        <div className="relative shrink-0">
+                            {user?.profilePic?.url ? (
+                                <img
+                                    src={user.profilePic.url}
+                                    alt={user.name || "Profile"}
+                                    className="h-24 w-24 rounded-2xl border-4 border-white object-cover shadow-md ring-1 ring-slate-200"
+                                />
+                            ) : (
+                                <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white bg-gradient-to-br from-indigo-100 via-violet-100 to-cyan-100 text-3xl font-bold text-indigo-600 shadow-md ring-1 ring-slate-200">
+                                    {user?.name
+                                        ?.charAt(0)
+                                        ?.toUpperCase() || "U"}
+                                </div>
+                            )}
+
+                            {isImageUpdating && (
+                                <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-slate-950/50">
+                                    <LoaderCircle
+                                        size={22}
+                                        className="animate-spin text-white"
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* CONTENT */}
+
+                        <div className="min-w-0 flex-1">
+                            <h3 className="text-sm font-bold text-slate-900">
+                                Profile picture
+                            </h3>
+
+                            <p className="mt-1 text-xs leading-5 text-slate-500">
+                                Add a profile picture so people can
+                                recognize you across Nexora.
+                            </p>
+
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                {/* CHANGE / ADD */}
+
+                                <label
+                                    className={`inline-flex cursor-pointer items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-indigo-700 ${
+                                        isImageUpdating
+                                            ? "pointer-events-none opacity-60"
+                                            : ""
+                                    }`}
+                                >
+                                    {isImageUpdating ? (
+                                        <LoaderCircle
+                                            size={15}
+                                            className="animate-spin"
+                                        />
+                                    ) : (
+                                        <Camera size={15} />
+                                    )}
+
+                                    {user?.profilePic?.url
+                                        ? "Change Photo"
+                                        : "Add Photo"}
+
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        className="hidden"
+                                        disabled={isImageUpdating}
+                                        onChange={
+                                            handleProfileImageChange
+                                        }
+                                    />
+                                </label>
+
+                                {/* REMOVE */}
+
+                                {user?.profilePic?.url && (
+                                    <button
+                                        type="button"
+                                        onClick={
+                                            handleRemoveProfileImage
+                                        }
+                                        disabled={isImageUpdating}
+                                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        <Trash2 size={15} />
+                                        Remove
+                                    </button>
+                                )}
+                            </div>
+
+                            {imageError && (
+                                <p className="mt-2 text-xs font-medium text-red-500">
+                                    {imageError}
+                                </p>
+                            )}
+
+                            <p className="mt-2 text-[11px] text-slate-400">
+                                JPG, PNG or WebP · Maximum 5 MB
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* FORM */}

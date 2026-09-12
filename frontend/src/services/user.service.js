@@ -140,3 +140,50 @@ export const updateProfile = async (profileData) => {
 
     return data;
 };
+
+export const updateUserProfileImage = async (file) => {
+    const formData = new FormData();
+
+    formData.append("image", file);
+
+    const response = await fetch(
+        `${API_BASE_URL}/users/profile/image`,
+        {
+            method: "PATCH",
+            credentials: "include",
+            body: formData,
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+                "Failed to update profile picture"
+        );
+    }
+
+    return data;
+};
+
+export const removeUserProfileImage = async () => {
+    const response = await fetch(
+        `${API_BASE_URL}/users/profile/image`,
+        {
+            method: "DELETE",
+            credentials: "include",
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+                "Failed to remove profile picture"
+        );
+    }
+
+    return data;
+};

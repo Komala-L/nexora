@@ -108,15 +108,6 @@ export const updateProfileSchema = z
         }
     )
 .strict()
-.refine(
-    (data) =>
-        data.name !== undefined ||
-        data.bio !== undefined ||
-        data.interests !== undefined,
-    {
-        message: "At least one profile field must be provided.",
-    }
-);
 
 
 /* 2. Update Profile Image */
