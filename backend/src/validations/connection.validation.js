@@ -1,10 +1,5 @@
 import { z } from "zod";
-
-const objectIdSchema = z
-    .string()
-    .trim()
-    .min(1, "ID is required")
-    .regex(/^[a-fA-F0-9]{24}$/, "Invalid MongoDB ObjectId");
+import { objectIdSchema } from "./common.validation.js";
 
 export const connectionUserIdSchema = z.object({
     userId: objectIdSchema,
