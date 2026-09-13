@@ -2,6 +2,7 @@ import {
     Bell,
     Compass,
     Home,
+    MessageCircle,
     Settings,
     User,
     Users,
@@ -24,6 +25,11 @@ const navigationItems = [
         label: "Connections",
         path: "/connections",
         icon: Users,
+    },
+    {
+        label: "Messages",
+        path: "/messages",
+        icon: MessageCircle,
     },
     {
         label: "Requests",

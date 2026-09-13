@@ -9,6 +9,8 @@ import Connections from "./pages/user/Connections";
 import Profile from "./pages/user/Profile";
 import Discover from "./pages/user/Discover";
 import MyProfile from "./pages/user/MyProfile";
+import Messages from "./pages/user/Messages";
+import Chat from "./pages/user/Chat";
 
 const App = () => {
     return (
@@ -50,6 +52,16 @@ const App = () => {
                     <Route 
                         path="connections" 
                         element={<Connections />} 
+                    />
+
+                    <Route
+                        path="/messages"
+                        element={<Messages />}
+                    />
+
+                    <Route
+                        path="/messages/:conversationId"
+                        element={<Chat />}
                     />
 
                     <Route

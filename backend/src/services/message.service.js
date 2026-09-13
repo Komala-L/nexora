@@ -2,7 +2,6 @@ import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import ApiError from "../utils/apiError.js";
 
-
 const getConversationForUser = async (
     conversationId,
     userId
@@ -56,7 +55,15 @@ export const sendMessage = async (
 
     await conversation.save();
 
-    return message;
+    const populatedMessage =
+        await Message.findById(message._id)
+            .populate(
+                "sender",
+                "_id name profilePic"
+            )
+            .lean();
+
+    return populatedMessage;
 };
 
 export const getConversationMessages = async (

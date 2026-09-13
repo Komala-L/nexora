@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 const Login = () => {
     const navigate = useNavigate();
-    const { setUser } = useAuth();
+    const { checkAuth } = useAuth();
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -63,11 +63,10 @@ const Login = () => {
         setIsSubmitting(true);
 
         try {
-            const response = await loginUser(formData);
-
-            console.log("Login successful:", response);
-            setUser(response.data.user);
+            await loginUser(formData);
+            await checkAuth();
             navigate("/home");
+
         } catch (error) {
             console.error("Login failed:", error);
 
