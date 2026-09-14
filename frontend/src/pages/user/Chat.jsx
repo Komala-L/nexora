@@ -200,7 +200,7 @@ const Chat = () => {
 
                 {/* Profile picture */}
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo-100 font-semibold text-indigo-700">
-                    {otherParticipant?.profilePic.url ? (
+                    {otherParticipant?.profilePic?.url ? (
                         <img
                             src={otherParticipant.profilePic.url}
                             alt={otherParticipant.name}

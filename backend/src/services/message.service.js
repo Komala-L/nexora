@@ -92,7 +92,7 @@ export const getConversationMessages = async (
                 "_id name profilePic"
             )
             .sort({
-                createdAt: 1,
+                createdAt: -1,
             })
             .skip(skip)
             .limit(limit)
@@ -100,6 +100,8 @@ export const getConversationMessages = async (
 
         Message.countDocuments(filter),
     ]);
+
+    messages.reverse();
 
     return {
         messages,
