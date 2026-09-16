@@ -1,3 +1,7 @@
+import {
+    createNotification,
+} from "./notification.service.js";
+
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import ApiError from "../utils/apiError.js";
@@ -54,6 +58,28 @@ export const sendMessage = async (
     conversation.lastMessageAt = message.createdAt;
 
     await conversation.save();
+
+    const recipientId =
+        conversation.participants.find(
+            (participant) =>
+                participant.toString() !==
+                senderId.toString()
+        );
+
+    if (!recipientId) {
+        throw new ApiError(
+            500,
+            "Unable to determine message recipient"
+        );
+    }
+
+    await createNotification({
+        recipient: recipientId,
+        sender: senderId,
+        type: "message",
+        conversation: conversation._id,
+        message: message._id,
+    });
 
     const populatedMessage =
         await Message.findById(message._id)
