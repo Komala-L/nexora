@@ -5,6 +5,7 @@ import {
     MessageCircle,
     Settings,
     User,
+    UserPlus,
     Users,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
@@ -34,7 +35,7 @@ const navigationItems = [
     {
         label: "Requests",
         path: "/requests",
-        icon: Bell,
+        icon: UserPlus,
         badge: 3,
     },
     {

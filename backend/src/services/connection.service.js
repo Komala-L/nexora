@@ -3,6 +3,9 @@ import mongoose from "mongoose";
 import Connection from "../models/connection.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/apiError.js";
+import {
+    createNotification,
+} from "./notification.service.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -92,9 +95,16 @@ export const sendConnectionRequest = async (
                 status: "pending",
             });
 
+            await createNotification({
+                recipient: recipientId,
+                sender: requesterId,
+                type: "connection_request",
+                connection: connection._id,
+            });
+
             return {
-              connection,
-              action: "request_sent",
+                connection,
+                action: "request_sent",
             };
   
         } catch (error) {
@@ -123,18 +133,25 @@ export const sendConnectionRequest = async (
 
   
   if (
-      existingConnection.recipient.toString() ===
-      requesterId.toString()
-  ) {
-      existingConnection.status = "accepted";
+    existingConnection.recipient.toString() ===
+        requesterId.toString()
+    ) {
+        existingConnection.status = "accepted";
 
-      await existingConnection.save();
+        await existingConnection.save();
 
-      return {
-          connection: existingConnection,
-          action: "connection_accepted",
-      };
-  }
+        await createNotification({
+            recipient: existingConnection.requester,
+            sender: requesterId,
+            type: "connection_accepted",
+            connection: existingConnection._id,
+        });
+
+        return {
+            connection: existingConnection,
+            action: "connection_accepted",
+        };
+    }
 }
 
 
@@ -180,6 +197,13 @@ export const acceptConnectionRequest = async (
     connection.status = "accepted";
 
     await connection.save();
+
+    await createNotification({
+        recipient: connection.requester,
+        sender: userId,
+        type: "connection_accepted",
+        connection: connection._id,
+    });
 
     return connection;
 };

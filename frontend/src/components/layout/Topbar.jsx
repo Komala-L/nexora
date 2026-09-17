@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Bell,
     ChevronDown,
@@ -5,12 +7,56 @@ import {
     Search,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { getUnreadNotificationCount } from "../../services/notification.service.js";
 
 const Topbar = () => {
-    const { user } = useAuth();
+    const navigate = useNavigate();
+    const { user, isLoading: authLoading } = useAuth();
+
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const userName = user?.name || "User";
     const userInitial = userName.charAt(0).toUpperCase();
+
+    const fetchUnreadCount = async () => {
+    try {
+        const data =
+            await getUnreadNotificationCount();
+
+        setUnreadCount(
+            data.data?.count || 0
+        );
+    } catch (error) {
+        console.error(
+            "Failed to fetch unread notification count:",
+            error
+        );
+    }
+};
+
+    useEffect(() => {
+        if (authLoading || !user) {
+            return;
+        }
+
+        fetchUnreadCount();
+
+        const handleNotificationsUpdated = () => {
+            fetchUnreadCount();
+        };
+
+        window.addEventListener(
+            "notificationsUpdated",
+            handleNotificationsUpdated
+        );
+
+        return () => {
+            window.removeEventListener(
+                "notificationsUpdated",
+                handleNotificationsUpdated
+            );
+        };
+    }, [authLoading, user]);
 
     return (
         <header className="flex h-20 items-center gap-4 border-b border-slate-200 bg-white px-4 sm:px-6">
@@ -46,12 +92,19 @@ const Topbar = () => {
             {/* Notifications */}
             <button
                 type="button"
+                onClick={() => navigate("/notifications")}
                 className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                 aria-label="Notifications"
             >
                 <Bell size={19} />
 
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-indigo-600" />
+                {unreadCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-bold text-white">
+                        {unreadCount > 99
+                            ? "99+"
+                            : unreadCount}
+                    </span>
+                )}
             </button>
 
             {/* User Avatar */}

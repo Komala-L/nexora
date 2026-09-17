@@ -11,6 +11,7 @@ import Discover from "./pages/user/Discover";
 import MyProfile from "./pages/user/MyProfile";
 import Messages from "./pages/user/Messages";
 import Chat from "./pages/user/Chat";
+import Notifications from "./pages/user/Notifications";
 
 const App = () => {
     return (
@@ -62,6 +63,11 @@ const App = () => {
                     <Route
                         path="/messages/:conversationId"
                         element={<Chat />}
+                    />
+
+                    <Route
+                        path="/notifications"
+                        element={<Notifications />}
                     />
 
                     <Route
