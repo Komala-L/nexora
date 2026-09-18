@@ -12,6 +12,7 @@ import MyProfile from "./pages/user/MyProfile";
 import Messages from "./pages/user/Messages";
 import Chat from "./pages/user/Chat";
 import Notifications from "./pages/user/Notifications";
+import Settings from "./pages/user/Settings";
 
 const App = () => {
     return (
@@ -73,6 +74,11 @@ const App = () => {
                     <Route
                         path="/profile"
                         element={<MyProfile />}
+                    />
+
+                    <Route
+                        path="/settings"
+                        element={<Settings />}
                     />
 
                      <Route

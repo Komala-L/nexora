@@ -370,6 +370,7 @@ export const discoverUsers = async (
 
     const baseFilter = {
         _id: { $ne: userId },
+        isDiscoverable: { $ne: false },
     };
 
     const locationFilter = {

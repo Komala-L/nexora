@@ -67,12 +67,10 @@ const userSchema = new mongoose.Schema({
         enum: ["friends", "professional", "learning"],
         default: ["friends"],
     },
-    discoveryPreferences: {
-        type: [String],
-        enum: ["friends", "professional", "learning"],
-        default: ["friends"],
+    isDiscoverable: {
+        type: Boolean,
+        default: true,
     },
-
     discoveryEnabled: {
         type: Boolean,
         default: true,

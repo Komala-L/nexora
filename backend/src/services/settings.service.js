@@ -2,7 +2,7 @@ import User from "../models/user.model.js";
 
 const getSettings = async (userId) => {
     const user = await User.findById(userId).select(
-        "discoveryPreferences"
+        "discoveryPreferences isDiscoverable"
     );
 
     if (!user) {
@@ -13,6 +13,7 @@ const getSettings = async (userId) => {
 
     return {
         discoveryPreferences: user.discoveryPreferences,
+        isDiscoverable: user.isDiscoverable,
     };
 };
 
@@ -25,12 +26,25 @@ const updateSettings = async (userId, settingsData) => {
         throw error;
     }
 
-    user.discoveryPreferences = settingsData.discoveryPreferences;
+    if (
+        settingsData.discoveryPreferences !== undefined
+    ) {
+        user.discoveryPreferences =
+            settingsData.discoveryPreferences;
+    }
+
+    if (
+        settingsData.isDiscoverable !== undefined
+    ) {
+        user.isDiscoverable =
+            settingsData.isDiscoverable;
+    }
 
     await user.save();
 
     return {
         discoveryPreferences: user.discoveryPreferences,
+        isDiscoverable: user.isDiscoverable,
     };
 };
 
