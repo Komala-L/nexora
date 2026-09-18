@@ -8,6 +8,7 @@ import connectionRoutes from "./routes/connection.routes.js";
 import conversationRoutes from "./routes/conversation.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import settingsRoutes from "./routes/settings.routes.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/v1/connections", connectionRoutes);
 app.use("/api/v1/conversations", conversationRoutes);
 app.use("/api/v1/messages", messageRoutes);
 app.use("/api/v1/notifications",notificationRoutes);
+app.use("/api/v1/settings", settingsRoutes);
 app.use(errorMiddleware);
 
 export default app;

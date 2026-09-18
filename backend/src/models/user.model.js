@@ -67,6 +67,37 @@ const userSchema = new mongoose.Schema({
         enum: ["friends", "professional", "learning"],
         default: ["friends"],
     },
+    discoveryPreferences: {
+        type: [String],
+        enum: ["friends", "professional", "learning"],
+        default: ["friends"],
+    },
+
+    discoveryEnabled: {
+        type: Boolean,
+        default: true,
+    },
+    notificationPreferences: {
+        connectionRequests: {
+            type: Boolean,
+            default: true,
+        },
+
+        connectionAccepted: {
+            type: Boolean,
+            default: true,
+        },
+
+        connectionRejected: {
+            type: Boolean,
+            default: true,
+        },
+
+        messages: {
+            type: Boolean,
+            default: true,
+        },
+    },
     professional: {
         role: {
             type: String,
