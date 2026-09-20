@@ -7,12 +7,16 @@ import {
     GraduationCap,
     ShieldCheck,
     ChevronRight,
+    Eye,
+    EyeOff,
 } from "lucide-react";
 
 import {
     getSettings,
     updateSettings,
 } from "../../services/settings.service";
+
+import { changePassword } from "../../services/security.service";
 
 const preferenceOptions = [
     {
@@ -42,6 +46,17 @@ const Settings = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+    });
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [passwordError, setPasswordError] = useState("");
+    const [passwordSuccess, setPasswordSuccess] = useState("");
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -84,6 +99,18 @@ const Settings = () => {
         });
     };
 
+    const handlePasswordChange = (event) => {
+        const { name, value } = event.target;
+
+        setPasswordData((current) => ({
+            ...current,
+            [name]: value,
+        }));
+
+        setPasswordError("");
+        setPasswordSuccess("");
+    };
+
     const handleSave = async () => {
         try {
             setIsSaving(true);
@@ -112,6 +139,34 @@ const Settings = () => {
             );
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleChangePassword = async (event) => {
+        event.preventDefault();
+
+        try {
+            setIsChangingPassword(true);
+            setPasswordError("");
+            setPasswordSuccess("");
+
+            await changePassword(passwordData);
+
+            setPasswordData({
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: "",
+            });
+
+            setPasswordSuccess(
+                "Password changed successfully."
+            );
+        } catch (error) {
+            setPasswordError(
+                error.message || "Failed to change password"
+            );
+        } finally {
+            setIsChangingPassword(false);
         }
     };
 
@@ -334,6 +389,182 @@ const Settings = () => {
                                     : "Your profile is hidden from discovery results."}
                             </p>
                         </div>
+                    </section>
+
+                    {/* Security */}
+                    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="flex items-start gap-4">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                                <ShieldCheck size={20} />
+                            </div>
+
+                            <div>
+                                <h2 className="text-lg font-semibold text-slate-900">
+                                    Security
+                                </h2>
+
+                                <p className="mt-1 text-sm leading-6 text-slate-500">
+                                    Keep your Nexora account secure by managing
+                                    your password.
+                                </p>
+                            </div>
+                        </div>
+
+                        {passwordError && (
+                            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                                {passwordError}
+                            </div>
+                        )}
+
+                        {passwordSuccess && (
+                            <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600">
+                                {passwordSuccess}
+                            </div>
+                        )}
+
+                        <form
+                            onSubmit={handleChangePassword}
+                            className="mt-6 space-y-5"
+                        >
+                            {/* Current Password */}
+                            <div>
+                                <label
+                                    htmlFor="currentPassword"
+                                    className="text-sm font-medium text-slate-700"
+                                >
+                                    Current Password
+                                </label>
+
+                                <div className="relative mt-2">
+                                    <input
+                                        id="currentPassword"
+                                        type={showCurrentPassword ? "text" : "password"}
+                                        name="currentPassword"
+                                        value={passwordData.currentPassword}
+                                        onChange={handlePasswordChange}
+                                        placeholder="Enter your current password"
+                                        autoComplete="off"
+                                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowCurrentPassword((current) => !current)
+                                        }
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+                                        aria-label={
+                                            showCurrentPassword
+                                                ? "Hide current password"
+                                                : "Show current password"
+                                        }
+                                    >
+                                        {showCurrentPassword ? (
+                                            <EyeOff size={19} />
+                                        ) : (
+                                            <Eye size={19} />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* New Password */}
+                            <div>
+                                <label
+                                    htmlFor="newPassword"
+                                    className="text-sm font-medium text-slate-700"
+                                >
+                                    New Password
+                                </label>
+
+                               <div className="relative mt-2">
+                                    <input
+                                        id="newPassword"
+                                        type={showNewPassword ? "text" : "password"}
+                                        name="newPassword"
+                                        value={passwordData.newPassword}
+                                        onChange={handlePasswordChange}
+                                        placeholder="Enter your new password"
+                                        autoComplete="new-password"
+                                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowNewPassword((current) => !current)
+                                        }
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+                                        aria-label={
+                                            showNewPassword
+                                                ? "Hide new password"
+                                                : "Show new password"
+                                        }
+                                    >
+                                        {showNewPassword ? (
+                                            <EyeOff size={19} />
+                                        ) : (
+                                            <Eye size={19} />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Confirm New Password */}
+                            <div>
+                                <label
+                                    htmlFor="confirmPassword"
+                                    className="text-sm font-medium text-slate-700"
+                                >
+                                    Confirm New Password
+                                </label>
+
+                                <div className="relative mt-2">
+                                    <input
+                                        id="confirmPassword"
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        name="confirmPassword"
+                                        value={passwordData.confirmPassword}
+                                        onChange={handlePasswordChange}
+                                        placeholder="Confirm your new password"
+                                        autoComplete="new-password"
+                                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowConfirmPassword((current) => !current)
+                                        }
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+                                        aria-label={
+                                            showConfirmPassword
+                                                ? "Hide confirm password"
+                                                : "Show confirm password"
+                                        }
+                                    >
+                                        {showConfirmPassword ? (
+                                            <EyeOff size={19} />
+                                        ) : (
+                                            <Eye size={19} />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Change Password Button */}
+                            <div className="flex justify-end pt-1">
+                                <button
+                                    type="submit"
+                                    disabled={isChangingPassword}
+                                    className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {isChangingPassword
+                                        ? "Changing Password..."
+                                        : "Change Password"}
+                                </button>
+                            </div>
+                        </form>
                     </section>
                 </main>
             </div>
