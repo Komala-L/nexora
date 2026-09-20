@@ -24,3 +24,29 @@ export const changePassword = async (passwordData) => {
 
     return data;
 };
+
+export const deleteAccount = async (currentPassword) => {
+    const response = await fetch(
+        `${API_BASE_URL}/settings/account`,
+        {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                currentPassword,
+            }),
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message || "Failed to delete account"
+        );
+    }
+
+    return data;
+};

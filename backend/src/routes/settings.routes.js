@@ -1,5 +1,4 @@
 import express from "express";
-
 import {
     getUserSettings,
     updateUserSettings,
@@ -12,19 +11,19 @@ import {
     updateSettingsSchema,
 } from "../validations/settings.validation.js";
 
+import {
+    deleteAccountController,
+} from "../controllers/account.controller.js";
+
+import {
+    deleteAccountSchema,
+} from "../validations/account.validation.js";
+
 const router = express.Router();
 
 router.use(verifyJWT);
-
-router.get(
-    "/",
-    getUserSettings
-);
-
-router.patch(
-    "/",
-    validate(updateSettingsSchema),
-    updateUserSettings
-);
+router.get("/",getUserSettings);
+router.patch("/",validate(updateSettingsSchema),updateUserSettings);
+router.delete("/account",validate(deleteAccountSchema),deleteAccountController);
 
 export default router;
