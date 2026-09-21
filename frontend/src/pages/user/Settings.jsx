@@ -325,6 +325,18 @@ const Settings = () => {
                                             Nexora to help you discover.
                                         </p>
                                     </div>
+                                    
+                                    {/* Save Button - API integration comes next */}
+                                    <div className="mt-6 ml-16 flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={handleSave}
+                                            disabled={isSaving || isLoading || discoveryPreferences.length === 0}
+                                            className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            {isSaving ? "Saving..." : "Save Changes"}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="mt-6 space-y-3">
@@ -389,21 +401,9 @@ const Settings = () => {
                                         your discovery experience.
                                     </p>
                                 </div>
-
-                                {/* Save Button - API integration comes next */}
-                                <div className="mt-6 flex justify-end">
-                                    <button
-                                        type="button"
-                                        onClick={handleSave}
-                                        disabled={isSaving || isLoading || discoveryPreferences.length === 0}
-                                        className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {isSaving ? "Saving..." : "Save Changes"}
-                                    </button>
-                                </div>
                             </section>
 
-                        {/* Privacy */}
+                            {/* Privacy */}
                             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                                 <div className="flex items-start gap-4">
                                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
@@ -416,8 +416,8 @@ const Settings = () => {
                                         </h2>
 
                                         <p className="mt-1 text-sm leading-6 text-slate-500">
-                                            Control how your profile participates in Nexora's
-                                            discovery experience.
+                                            Control whether other Nexora users can discover your
+                                            profile.
                                         </p>
                                     </div>
                                 </div>
@@ -425,31 +425,31 @@ const Settings = () => {
                                 <div className="mt-6 flex items-center justify-between gap-6 rounded-xl border border-slate-200 p-4">
                                     <div className="min-w-0">
                                         <h3 className="text-sm font-semibold text-slate-900">
-                                            Appear in Discovery
+                                            Private Profile
                                         </h3>
 
                                         <p className="mt-1 text-xs leading-5 text-slate-500">
-                                            Allow other users to discover your profile based on
-                                            your discovery preferences and location.
+                                            When privacy is enabled, your profile will be hidden
+                                            from discovery results.
                                         </p>
                                     </div>
 
                                     <button
                                         type="button"
                                         role="switch"
-                                        aria-checked={isDiscoverable}
+                                        aria-checked={!isDiscoverable}
                                         onClick={() =>
                                             setIsDiscoverable((current) => !current)
                                         }
                                         className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition ${
-                                            isDiscoverable
+                                            !isDiscoverable
                                                 ? "bg-indigo-600"
                                                 : "bg-slate-300"
                                         }`}
                                     >
                                         <span
                                             className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition ${
-                                                isDiscoverable
+                                                !isDiscoverable
                                                     ? "translate-x-6"
                                                     : "translate-x-1"
                                             }`}
@@ -459,9 +459,9 @@ const Settings = () => {
 
                                 <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3">
                                     <p className="text-xs leading-5 text-slate-500">
-                                        {isDiscoverable
-                                            ? "Your profile can currently appear in discovery results."
-                                            : "Your profile is hidden from discovery results."}
+                                        {!isDiscoverable
+                                            ? "Privacy is enabled. Your profile is hidden from discovery."
+                                            : "Privacy is disabled. Your profile is visible in discovery."}
                                     </p>
                                 </div>
                             </section>
