@@ -24,16 +24,17 @@ const Chat = () => {
     const [sending, setSending] = useState(false);
     const [error, setError] = useState("");
 
-    const [isOtherUserOnline, setIsOtherUserOnline] =
-        useState(false);
-
-    const [lastSeenAt, setLastSeenAt] =
-        useState(null);
+    const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
+    const [lastSeenAt, setLastSeenAt] = useState(null);
+    
+    const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
 
     const messagesContainerRef = useRef(null);
     const messagesEndRef = useRef(null);
 
     const shouldAutoScrollRef = useRef(true);
+    const typingTimeoutRef = useRef(null);
+    const isTypingRef = useRef(false);
 
     /*
      * --------------------------------------------------
@@ -391,6 +392,54 @@ const Chat = () => {
     }, [otherParticipant?._id]);
 
     /*
+    * --------------------------------------------------
+    * TYPING INDICATOR
+    * --------------------------------------------------
+    */
+    useEffect(() => {
+        if (!otherParticipant?._id) {
+            return;
+        }
+
+        const otherUserId = String(
+            otherParticipant._id
+        );
+
+        const handleUserTyping = ({
+            userId,
+            conversationId: typingConversationId,
+            isTyping,
+        }) => {
+            if (
+                String(userId) !== otherUserId ||
+                String(typingConversationId) !==
+                    String(conversationId)
+            ) {
+                return;
+            }
+
+            setIsOtherUserTyping(Boolean(isTyping));
+        };
+
+        socket.on(
+            "user-typing",
+            handleUserTyping
+        );
+
+        return () => {
+            socket.off(
+                "user-typing",
+                handleUserTyping
+            );
+
+            setIsOtherUserTyping(false);
+        };
+    }, [
+        otherParticipant?._id,
+        conversationId,
+    ]);
+
+    /*
      * --------------------------------------------------
      * DEBUG SOCKET STATUS
      * --------------------------------------------------
@@ -499,6 +548,64 @@ const Chat = () => {
     };
 
     /*
+    * --------------------------------------------------
+    * TYPING EVENTS
+    * --------------------------------------------------
+    */
+    const emitTypingStart = () => {
+        if (
+            !otherParticipant?._id ||
+            !conversationId
+        ) {
+            return;
+        }
+
+        if (!isTypingRef.current) {
+            isTypingRef.current = true;
+
+            socket.emit("typing-start", {
+                conversationId,
+                recipientId: otherParticipant._id,
+            });
+        }
+
+        if (typingTimeoutRef.current) {
+            clearTimeout(
+                typingTimeoutRef.current
+            );
+        }
+
+        typingTimeoutRef.current = setTimeout(() => {
+            emitTypingStop();
+        }, 800);
+    };
+
+    const emitTypingStop = () => {
+        if (
+            !isTypingRef.current ||
+            !conversationId ||
+            !otherParticipant?._id
+        ) {
+            return;
+        }
+
+        isTypingRef.current = false;
+
+        socket.emit("typing-stop", {
+            conversationId,
+            recipientId: otherParticipant._id,
+        });
+
+        if (typingTimeoutRef.current) {
+            clearTimeout(
+                typingTimeoutRef.current
+            );
+
+            typingTimeoutRef.current = null;
+        }
+    };
+
+    /*
      * --------------------------------------------------
      * SEND MESSAGE
      * --------------------------------------------------
@@ -512,6 +619,8 @@ const Chat = () => {
         if (!trimmedContent || sending) {
             return;
         }
+
+        emitTypingStop();
 
         try {
             setSending(true);
@@ -638,7 +747,11 @@ const Chat = () => {
                     </h1>
 
                     <p className="text-xs text-slate-500">
-                        {isOtherUserOnline ? (
+                        {isOtherUserTyping ? (
+                            <span className="text-indigo-600">
+                                typing...
+                            </span>
+                        ) : isOtherUserOnline ? (
                             <span className="text-emerald-600">
                                 ● Online
                             </span>
@@ -748,11 +861,17 @@ const Chat = () => {
                     <input
                         type="text"
                         value={content}
-                        onChange={(event) =>
-                            setContent(
-                                event.target.value
-                            )
-                        }
+                        onChange={(event) => {
+                            const value = event.target.value;
+
+                            setContent(value);
+
+                            if (value.trim()) {
+                                emitTypingStart();
+                            } else {
+                                emitTypingStop();
+                            }
+                        }}
                         placeholder="Type a message..."
                         className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                     />

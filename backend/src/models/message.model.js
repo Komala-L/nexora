@@ -72,17 +72,26 @@ const messageSchema = new Schema(
       default: [],
     },
 
-    status: {
-      type: String,
-      enum: ["sent", "delivered", "read"],
-      default: "sent",
-      required: true,
+    sentAt: {
+      type: Date,
+      default: Date.now,
+      immutable: true,
+    },
+
+    deliveredAt: {
+      type: Date,
+      default: null,
+    },
+
+    readAt: {
+      type: Date,
+      default: null,
     },
 
     deletedFor: [
       {
-        type: Schema.Types.ObjectId,
-        ref: "User",
+          type: Schema.Types.ObjectId,
+          ref: "User",
       },
     ],
   },
@@ -93,10 +102,13 @@ const messageSchema = new Schema(
 );
 
 messageSchema.index({
-  conversation: 1,
-  createdAt: 1,
+    conversation: 1,
+    createdAt: 1,
 });
 
-const Message = mongoose.model("Message", messageSchema);
+const Message = mongoose.model(
+    "Message",
+    messageSchema
+);
 
 export default Message;

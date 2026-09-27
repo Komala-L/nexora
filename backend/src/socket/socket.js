@@ -2,7 +2,7 @@ import { Server } from "socket.io";
 import { authenticateSocket } from "./socket.middleware.js";
 import logger from "../utils/logger.js";
 import User from "../models/user.model.js";
-
+import Conversation from "../models/conversation.model.js";
 import {
     addOnlineUser,
     removeOnlineUser,
@@ -42,6 +42,143 @@ export const initializeSocket = (server) => {
          * --------------------------------------------------
          */
         addOnlineUser(userId, socket.id);
+
+        /*
+        * --------------------------------------------------
+        * TYPING START
+        * --------------------------------------------------
+        */
+        socket.on(
+            "typing-start",
+            async ({ conversationId }) => {
+                try {
+                    if (!conversationId) {
+                        return;
+                    }
+
+                    const conversation =
+                        await Conversation.findById(
+                            conversationId
+                        ).select("participants");
+
+                    if (!conversation) {
+                        return;
+                    }
+
+                    const isParticipant =
+                        conversation.participants.some(
+                            (participant) =>
+                                participant.toString() ===
+                                userId
+                        );
+
+                    if (!isParticipant) {
+                        logger.warn(
+                            `Unauthorized typing-start attempt by user ${userId}`
+                        );
+
+                        return;
+                    }
+
+                    const recipientId =
+                        conversation.participants.find(
+                            (participant) =>
+                                participant.toString() !==
+                                userId
+                        );
+
+                    if (!recipientId) {
+                        return;
+                    }
+
+                    socket
+                        .to(`user:${recipientId}`)
+                        .emit("user-typing", {
+                            userId,
+                            conversationId,
+                            isTyping: true,
+                        });
+                } catch (error) {
+                    logger.error(
+                        "Typing start event failed",
+                        {
+                            message: error.message,
+                            stack: error.stack,
+                            userId,
+                        }
+                    );
+                }
+            }
+        );
+
+
+        /*
+        * --------------------------------------------------
+        * TYPING STOP
+        * --------------------------------------------------
+        */
+        socket.on(
+            "typing-stop",
+            async ({ conversationId }) => {
+                try {
+                    if (!conversationId) {
+                        return;
+                    }
+
+                    const conversation =
+                        await Conversation.findById(
+                            conversationId
+                        ).select("participants");
+
+                    if (!conversation) {
+                        return;
+                    }
+
+                    const isParticipant =
+                        conversation.participants.some(
+                            (participant) =>
+                                participant.toString() ===
+                                userId
+                        );
+
+                    if (!isParticipant) {
+                        logger.warn(
+                            `Unauthorized typing-stop attempt by user ${userId}`
+                        );
+
+                        return;
+                    }
+
+                    const recipientId =
+                        conversation.participants.find(
+                            (participant) =>
+                                participant.toString() !==
+                                userId
+                        );
+
+                    if (!recipientId) {
+                        return;
+                    }
+
+                    socket
+                        .to(`user:${recipientId}`)
+                        .emit("user-typing", {
+                            userId,
+                            conversationId,
+                            isTyping: false,
+                        });
+                } catch (error) {
+                    logger.error(
+                        "Typing stop event failed",
+                        {
+                            message: error.message,
+                            stack: error.stack,
+                            userId,
+                        }
+                    );
+                }
+            }
+        );
 
         /*
          * --------------------------------------------------
