@@ -3,6 +3,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { 
     getCurrentUser, 
     getUserById,
+    getUserPresence,
     updateProfile, 
     updateProfileImage, 
     removeProfileImage, 
@@ -44,6 +45,27 @@ export const getUserProfile = asyncHandler(async (req, res) => {
         )
     );
 });
+
+/**
+ * Get a user's online/last-seen presence.
+ */
+export const getUserPresenceController = asyncHandler(
+    async (req, res) => {
+        const presence = await getUserPresence(
+            req.params.userId
+        );
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    presence,
+                },
+                "User presence fetched successfully"
+            )
+        );
+    }
+);
 
 /**
  * Update the authenticated user's profile.

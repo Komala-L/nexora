@@ -4,6 +4,7 @@ import ApiError from "../utils/apiError.js";
 import logger from "../utils/logger.js";
 import { uploadImage, deleteImage } from "./cloudinary.service.js";
 import { generateProtectedLocation } from "../utils/location.utils.js";
+import { isUserOnline } from "../socket/presence.js";
 
 const generatePairKey = (userId1, userId2) => {
     const [firstUserId, secondUserId] = [
@@ -44,7 +45,6 @@ export const updateProfile = async (userId, updateData) => {
 
     const updates = {};
 
-    // Simple fields
     for (const field of [
         "name",
         "bio",
@@ -56,7 +56,6 @@ export const updateProfile = async (userId, updateData) => {
         }
     }
 
-    // Nested professional fields
     if (updateData.professional !== undefined) {
         for (const field of [
             "role",
@@ -71,7 +70,6 @@ export const updateProfile = async (userId, updateData) => {
         }
     }
 
-    // Nested learning fields
     if (updateData.learning !== undefined) {
         for (const field of [
             "subjects",
@@ -497,5 +495,25 @@ export const getUserById = async (userId, currentUserId) => {
             status: connectionStatus,
             direction: connectionDirection,
         },
+    };
+};
+
+/**
+ * Get a user's online/last-seen presence.
+ */
+export const getUserPresence = async (userId) => {
+    const user = await User.findById(userId).select(
+        "_id lastSeenAt"
+    );
+
+    if (!user) {
+        throw new ApiError(404, "User not found.");
+    }
+
+    const isOnline = isUserOnline(userId);
+
+    return {
+        isOnline,
+        lastSeenAt: isOnline ? null : user.lastSeenAt,
     };
 };

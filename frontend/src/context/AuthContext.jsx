@@ -1,5 +1,16 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { getCurrentUser, logoutUser } from "../services/auth.service";
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
+
+import {
+    getCurrentUser,
+    logoutUser,
+} from "../services/auth.service";
+
+import { socket } from "../socket/socket";
 
 const AuthContext = createContext(null);
 
@@ -23,10 +34,29 @@ export const AuthProvider = ({ children }) => {
         checkAuth();
     }, []);
 
+   useEffect(() => {
+        if (isLoading) {
+            return;
+        }
+
+        if (!user) {
+            if (socket.connected) {
+                socket.disconnect();
+            }
+
+            return;
+        }
+
+        if (!socket.connected) {
+            socket.connect();
+        }
+    }, [user, isLoading]);
+
     const logout = async () => {
         try {
             await logoutUser();
         } finally {
+            socket.disconnect();
             setUser(null);
         }
     };

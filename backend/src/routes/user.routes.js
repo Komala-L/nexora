@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { 
     currentUser, 
-    getUserProfile, 
+    getUserProfile,
+    getUserPresenceController,
     updateUserProfile, 
     updateUserProfileImage, 
     removeUserProfileImage, 
@@ -9,6 +10,7 @@ import {
     nearbyUsers,
     discoverUsersController
 } from "../controllers/user.controller.js";
+
 import { verifyJWT } from "../middleware/auth.middleware.js";
 import validate, { validateQuery } from "../middleware/validation.middleware.js";
 import upload from "../middleware/upload.middleware.js";
@@ -23,6 +25,7 @@ router.delete("/profile/image", verifyJWT, removeUserProfileImage);
 router.patch("/location", verifyJWT, validate(updateLocationSchema), updateUserLocation);
 router.get("/nearby", verifyJWT, validateQuery(nearbyUsersSchema), nearbyUsers);
 router.get("/discover", verifyJWT, validateQuery(discoverUsersSchema), discoverUsersController);
+router.get("/:userId/presence", verifyJWT, getUserPresenceController);
 router.get("/:userId", verifyJWT, getUserProfile);
 
 export default router;

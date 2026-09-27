@@ -16,7 +16,11 @@ export const createMessage =
             await sendMessage(
                 req.params.conversationId,
                 req.user._id,
-                req.body.content
+                {
+                    type: req.body.type,
+                    content: req.body.content,
+                    attachments: req.body.attachments,
+                }
             );
 
         return res.status(201).json(
