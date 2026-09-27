@@ -50,6 +50,14 @@ const Chat = () => {
                 return;
             }
 
+            /*
+            * Tell the server that this message
+            * has reached the recipient's socket.
+            */
+            socket.emit("message-delivered", {
+                messageId: message._id,
+            });
+
             setMessages((previousMessages) => {
                 const alreadyExists =
                     previousMessages.some(
@@ -77,6 +85,45 @@ const Chat = () => {
             );
         };
     }, [conversationId]);
+
+    /*
+    * --------------------------------------------------
+    * MESSAGE DELIVERED SOCKET LISTENER
+    * --------------------------------------------------
+    */
+    useEffect(() => {
+        const handleMessageDelivered = ({
+            messageId,
+        }) => {
+            if (!messageId) {
+                return;
+            }
+
+            setMessages((previousMessages) =>
+                previousMessages.map((message) =>
+                    String(message._id) ===
+                    String(messageId)
+                        ? {
+                            ...message,
+                            status: "delivered",
+                        }
+                        : message
+                )
+            );
+        };
+
+        socket.on(
+            "message-delivered",
+            handleMessageDelivered
+        );
+
+        return () => {
+            socket.off(
+                "message-delivered",
+                handleMessageDelivered
+            );
+        };
+    }, []);
 
     /*
      * --------------------------------------------------
@@ -815,17 +862,27 @@ const Chat = () => {
                                                     }
                                                 </span>
 
-                                                <span
-                                                    className={`shrink-0 text-[10px] ${
+                                                <div
+                                                    className={`flex shrink-0 items-center gap-1 text-[10px] ${
                                                         isOwnMessage
                                                             ? "text-indigo-100"
                                                             : "text-slate-400"
                                                     }`}
                                                 >
-                                                    {formatMessageTime(
-                                                        message.createdAt
+                                                    <span>
+                                                        {formatMessageTime(
+                                                            message.createdAt
+                                                        )}
+                                                    </span>
+
+                                                    {isOwnMessage && (
+                                                        <span>
+                                                            {message.status === "delivered"
+                                                                ? "✓✓"
+                                                                : "✓"}
+                                                        </span>
                                                     )}
-                                                </span>
+                                                </div>
 
                                             </div>
                                         </div>

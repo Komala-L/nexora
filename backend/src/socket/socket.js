@@ -9,6 +9,7 @@ import {
     isUserOnline,
     getOnlineUserIds,
 } from "./presence.js";
+import { markMessageDelivered } from "../services/messageReceipt.service.js";
 
 let io;
 
@@ -204,6 +205,53 @@ export const initializeSocket = (server) => {
         socket.broadcast.emit("user-online", {
             userId,
         });
+
+        /*
+        * --------------------------------------------------
+        * MESSAGE DELIVERED
+        * --------------------------------------------------
+        */
+        socket.on(
+            "message-delivered",
+            async ({ messageId }) => {
+                try {
+                    if (!messageId) {
+                        return;
+                    }
+
+                    const message =
+                        await markMessageDelivered(
+                            messageId,
+                            userId
+                        );
+
+                    /*
+                    * Notify the original sender that
+                    * their message has been delivered.
+                    */
+                    io.to(
+                        `user:${message.sender.toString()}`
+                    ).emit(
+                        "message-delivered",
+                        {
+                            messageId:
+                                message._id.toString(),
+                            conversationId:
+                                message.conversation.toString(),
+                        }
+                    );
+                } catch (error) {
+                    logger.error(
+                        "Failed to mark message as delivered",
+                        {
+                            messageId,
+                            userId,
+                            message: error.message,
+                        }
+                    );
+                }
+            }
+        );
 
         /*
          * --------------------------------------------------
