@@ -9,7 +9,11 @@ import {
     isUserOnline,
     getOnlineUserIds,
 } from "./presence.js";
-import { markMessageDelivered } from "../services/messageReceipt.service.js";
+
+import {
+    markMessageDelivered,
+    markMessageRead,
+} from "../services/messageReceipt.service.js";
 
 let io;
 
@@ -254,6 +258,53 @@ export const initializeSocket = (server) => {
         );
 
         /*
+        * --------------------------------------------------
+        * MESSAGE READ
+        * --------------------------------------------------
+        */
+        socket.on(
+            "message-read",
+            async ({ messageId }) => {
+                try {
+                    if (!messageId) {
+                        return;
+                    }
+
+                    const message =
+                        await markMessageRead(
+                            messageId,
+                            userId
+                        );
+
+                    io.to(
+                        `user:${message.sender.toString()}`
+                    ).emit(
+                        "message-read",
+                        {
+                            messageId:
+                                message._id.toString(),
+
+                            conversationId:
+                                message.conversation.toString(),
+
+                            readAt:
+                                message.readAt,
+                        }
+                    );
+                } catch (error) {
+                    logger.error(
+                        "Failed to mark message as read",
+                        {
+                            messageId,
+                            userId,
+                            message: error.message,
+                        }
+                    );
+                }
+            }
+        );
+
+        /*
          * --------------------------------------------------
          * SOCKET DISCONNECT
          * --------------------------------------------------
@@ -264,25 +315,13 @@ export const initializeSocket = (server) => {
                 socket.id
             );
 
-            /*
-             * If another browser/tab/device is still
-             * connected for the same user, do NOT mark
-             * that user offline.
-             */
             if (becameOffline) {
                 const offlineAt = new Date();
 
                 await User.findByIdAndUpdate(userId, {
                     lastSeenAt: offlineAt,
                 });
-
-                /*
-                 * The user could reconnect while the
-                 * database update was running.
-                 *
-                 * Check presence again before notifying
-                 * everyone that the user is offline.
-                 */
+        
                 if (!isUserOnline(userId)) {
                     socket.broadcast.emit("user-offline", {
                         userId,

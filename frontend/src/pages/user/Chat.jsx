@@ -8,6 +8,7 @@ import {
     getMessages,
     sendMessage,
 } from "../../services/message.service.js";
+
 import { getUserPresence } from "../../services/user.service.js";
 import { useAuth } from "../../context/AuthContext";
 
@@ -50,14 +51,6 @@ const Chat = () => {
                 return;
             }
 
-            /*
-            * Tell the server that this message
-            * has reached the recipient's socket.
-            */
-            socket.emit("message-delivered", {
-                messageId: message._id,
-            });
-
             setMessages((previousMessages) => {
                 const alreadyExists =
                     previousMessages.some(
@@ -93,25 +86,25 @@ const Chat = () => {
     */
     useEffect(() => {
         const handleMessageDelivered = ({
-            messageId,
-        }) => {
-            if (!messageId) {
-                return;
-            }
+        messageId,
+    }) => {
+        if (!messageId) {
+            return;
+        }
 
-            setMessages((previousMessages) =>
-                previousMessages.map((message) =>
-                    String(message._id) ===
-                    String(messageId)
-                        ? {
-                            ...message,
-                            status: "delivered",
-                        }
-                        : message
-                )
-            );
-        };
-
+        setMessages((previousMessages) =>
+            previousMessages.map((message) =>
+                String(message._id) ===
+                String(messageId)
+                    ? {
+                        ...message,
+                        deliveredAt:
+                            new Date().toISOString(),
+                    }
+                    : message
+            )
+        );
+    };
         socket.on(
             "message-delivered",
             handleMessageDelivered
@@ -124,6 +117,83 @@ const Chat = () => {
             );
         };
     }, []);
+
+    /*
+    * --------------------------------------------------
+    * MESSAGE READ SOCKET LISTENER
+    * --------------------------------------------------
+    */
+    useEffect(() => {
+        const handleMessageRead = ({
+            messageId,
+            readAt,
+        }) => {
+            if (!messageId) {
+                return;
+            }
+
+            setMessages((previousMessages) =>
+                previousMessages.map((message) =>
+                    String(message._id) ===
+                    String(messageId)
+                        ? {
+                            ...message,
+                            readAt:
+                                readAt || new Date(),
+                        }
+                        : message
+                )
+            );
+        };
+
+        socket.on(
+            "message-read",
+            handleMessageRead
+        );
+
+        return () => {
+            socket.off(
+                "message-read",
+                handleMessageRead
+            );
+        };
+    }, []);
+
+    /*
+    * --------------------------------------------------
+    * MARK INCOMING MESSAGES AS READ
+    * --------------------------------------------------
+    */
+    useEffect(() => {
+        if (
+            loading ||
+            !user ||
+            !conversationId ||
+            messages.length === 0
+        ) {
+            return;
+        }
+
+        messages.forEach((message) => {
+            const isOwnMessage =
+                String(message.sender?._id) ===
+                String(user._id);
+
+            if (
+                !isOwnMessage &&
+                !message.readAt
+            ) {
+                socket.emit("message-read", {
+                    messageId: message._id,
+                });
+            }
+        });
+    }, [
+        messages,
+        loading,
+        user,
+        conversationId,
+    ]);
 
     /*
      * --------------------------------------------------
@@ -275,9 +345,6 @@ const Chat = () => {
             }
         };
 
-        /*
-        * Register socket listeners FIRST.
-        */
         socket.on(
             "user-online",
             handleUserOnline
@@ -293,12 +360,6 @@ const Chat = () => {
             handlePresenceState
         );
 
-        /*
-        * Then ask the backend for the CURRENT state.
-        *
-        * This protects us from missing a socket event
-        * because of timing/race conditions.
-        */
         const fetchPresence = async () => {
             try {
                 const response =
@@ -385,7 +446,6 @@ const Chat = () => {
             setLastSeenAt(lastSeenAt);
         };
 
-        // Listen for real-time presence changes
         socket.on(
             "user-online",
             handleUserOnline
@@ -396,8 +456,6 @@ const Chat = () => {
             handleUserOffline
         );
 
-        // Fetch the current presence when
-        // the chat is opened.
         const fetchPresence = async () => {
             try {
                 const response =
@@ -876,10 +934,18 @@ const Chat = () => {
                                                     </span>
 
                                                     {isOwnMessage && (
-                                                        <span>
-                                                            {message.status === "delivered"
+                                                        <span
+                                                            className={
+                                                                message.readAt
+                                                                    ? "text-sky-400"
+                                                                    : ""
+                                                            }
+                                                        >
+                                                            {message.readAt
                                                                 ? "✓✓"
-                                                                : "✓"}
+                                                                : message.deliveredAt
+                                                                    ? "✓✓"
+                                                                    : "✓"}
                                                         </span>
                                                     )}
                                                 </div>
