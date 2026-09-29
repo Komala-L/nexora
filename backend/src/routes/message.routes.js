@@ -12,6 +12,7 @@ import validate, {
 import {
     createMessage,
     getMessages,
+    uploadMessageAttachment,
 } from "../controllers/message.controller.js";
 
 import {
@@ -22,7 +23,14 @@ import {
     getConnectionsQuerySchema,
 } from "../validations/connection.validation.js";
 
+import chatUpload from "../middleware/chatUpload.middleware.js";
+
 const router = Router();
+
+/**
+ * Upload a chat attachment.
+ */
+router.post("/attachments",verifyJWT,chatUpload.single("file"),uploadMessageAttachment);
 
 /**
  * Send a message in a conversation.

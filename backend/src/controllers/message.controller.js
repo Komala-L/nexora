@@ -6,6 +6,9 @@ import {
     getConversationMessages,
 } from "../services/message.service.js";
 
+import {
+    uploadChatAttachment,
+} from "../services/cloudinary.service.js";
 
 /**
  * Send a message in a conversation.
@@ -34,7 +37,51 @@ export const createMessage =
         );
     });
 
+/**
+ * Upload an attachment for a chat message.
+ */
+export const uploadMessageAttachment =
+    asyncHandler(async (req, res) => {
+        if (!req.file) {
+            return res.status(400).json(
+                new ApiResponse(
+                    400,
+                    null,
+                    "Attachment file is required."
+                )
+            );
+        }
 
+        const uploaded =
+            await uploadChatAttachment(
+                req.file.buffer,
+                {
+                    mimeType: req.file.mimetype,
+                    fileName: req.file.originalname,
+                }
+            );
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    attachment: {
+                        url: uploaded.url,
+                        publicId:
+                            uploaded.publicId,
+                        fileName:
+                            req.file.originalname,
+                        mimeType:
+                            req.file.mimetype,
+                        size:
+                            req.file.size,
+                    },
+                },
+                "Attachment uploaded successfully"
+            )
+        );
+    });
+    
 /**
  * Get messages from a conversation.
  */

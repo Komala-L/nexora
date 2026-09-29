@@ -2,7 +2,11 @@ const API_BASE_URL = "http://localhost:5000/api/v1";
 
 export const sendMessage = async (
     conversationId,
-    content
+    content = "",
+    {
+        type = "text",
+        attachments = [],
+    } = {}
 ) => {
     const response = await fetch(
         `${API_BASE_URL}/messages/${conversationId}`,
@@ -13,7 +17,9 @@ export const sendMessage = async (
             },
             credentials: "include",
             body: JSON.stringify({
+                type,
                 content,
+                attachments,
             }),
         }
     );
@@ -49,6 +55,34 @@ export const getMessages = async (
         throw new Error(
             data.message ||
             "Failed to fetch messages"
+        );
+    }
+
+    return data;
+};
+
+export const uploadMessageAttachment = async (
+    file
+) => {
+    const formData = new FormData();
+
+    formData.append("file", file);
+
+    const response = await fetch(
+        `${API_BASE_URL}/messages/attachments`,
+        {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+            "Failed to upload attachment"
         );
     }
 
