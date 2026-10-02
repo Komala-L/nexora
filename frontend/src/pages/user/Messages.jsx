@@ -18,47 +18,8 @@ const Messages = () => {
     const [conversations, setConversations] = useState([]);
     const [connections, setConnections] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [startingConversation, setStartingConversation] =
-        useState(null);
+    const [startingConversation, setStartingConversation] = useState(null);
     const [error, setError] = useState("");
-
-    // useEffect(() => {
-    //     if (authLoading || !user) {
-    //         return;
-    //     }
-
-    //     const fetchMessagesData = async () => {
-    //         try {
-    //             setLoading(true);
-    //             setError("");
-
-    //             const [
-    //                 conversationsResponse,
-    //                 connectionsResponse,
-    //             ] = await Promise.all([
-    //                 getMyConversations(),
-    //                 getMyConnections(),
-    //             ]);
-
-    //             setConversations(
-    //                 conversationsResponse.data?.conversations || []
-    //             );
-
-    //             setConnections(
-    //                 connectionsResponse.data?.connections || []
-    //             );
-    //         } catch (error) {
-    //             setError(
-    //                 error.message ||
-    //                 "Failed to load messages"
-    //             );
-    //         } finally {
-    //             setLoading(false);
-    //         }
-    //     };
-
-    //     fetchMessagesData();
-    // }, [authLoading, user]);
 
     /*
      * --------------------------------------------------
@@ -352,21 +313,6 @@ const Messages = () => {
                                                 .toUpperCase()
                                         )}
                                     </div>
-
-                                    {/* <div className="min-w-0 flex-1">
-                                        <h3 className="truncate font-semibold text-slate-900">
-                                            {otherUser.name}
-                                        </h3>
-
-                                        <p className="mt-1 text-sm text-slate-500">
-                                            {isStarting
-                                                ? "Starting conversation..."
-                                                : hasConversation
-                                                    ? "Open conversation"
-                                                    : "Start a conversation"}
-                                        </p>
-                                    </div> */}
-
 
                                     {/* User information */}
                                     <div className="min-w-0 flex-1">

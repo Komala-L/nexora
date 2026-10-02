@@ -61,6 +61,7 @@ const Chat = () => {
     const shouldAutoScrollRef = useRef(true);
     const typingTimeoutRef = useRef(null);
     const isTypingRef = useRef(false);
+    const readMessagesRef = useRef(new Set());
     const messagePageRef = useRef(1);
 
     /*
@@ -191,35 +192,42 @@ const Chat = () => {
     * --------------------------------------------------
     */
     useEffect(() => {
+    if (
+        loading ||
+        !user ||
+        !conversationId ||
+        messages.length === 0
+    ) {
+        return;
+    }
+
+    messages.forEach((message) => {
+        const isOwnMessage =
+            String(message.sender?._id) ===
+            String(user._id);
+
         if (
-            loading ||
-            !user ||
-            !conversationId ||
-            messages.length === 0
+            !isOwnMessage &&
+            !message.readAt &&
+            !readMessagesRef.current.has(
+                String(message._id)
+            )
         ) {
-            return;
+            readMessagesRef.current.add(
+                String(message._id)
+            );
+
+            socket.emit("message-read", {
+                messageId: message._id,
+            });
         }
-
-        messages.forEach((message) => {
-            const isOwnMessage =
-                String(message.sender?._id) ===
-                String(user._id);
-
-            if (
-                !isOwnMessage &&
-                !message.readAt
-            ) {
-                socket.emit("message-read", {
-                    messageId: message._id,
-                });
-            }
-        });
-    }, [
-        messages,
-        loading,
-        user,
-        conversationId,
-    ]);
+    });
+}, [
+    messages,
+    loading,
+    user,
+    conversationId,
+]);
 
     /*
      * --------------------------------------------------
@@ -229,6 +237,8 @@ const Chat = () => {
     useEffect(() => {
         const fetchChat = async () => {
             try {
+                readMessagesRef.current.clear();
+                
                 messagePageRef.current = 1;
                 setMessagePage(1);
                 setHasMoreMessages(true);

@@ -3,6 +3,7 @@ import { authenticateSocket } from "./socket.middleware.js";
 import logger from "../utils/logger.js";
 import User from "../models/user.model.js";
 import Conversation from "../models/conversation.model.js";
+import Notification from "../models/notification.model.js";
 import {
     addOnlineUser,
     removeOnlineUser,
@@ -14,6 +15,10 @@ import {
     markMessageDelivered,
     markMessageRead,
 } from "../services/messageReceipt.service.js";
+
+import {
+    markNotificationAsRead,
+} from "../services/notification.service.js";
 
 let io;
 
@@ -185,18 +190,7 @@ export const initializeSocket = (server) => {
             }
         );
 
-        /*
-         * --------------------------------------------------
-         * SEND CURRENT PRESENCE SNAPSHOT
-         *
-         * This is important.
-         *
-         * A client should not have to depend only on
-         * catching a "user-online" event.
-         * It can ask for the current online state whenever
-         * its socket connects.
-         * --------------------------------------------------
-         */
+
         socket.emit("presence-state", {
             onlineUserIds: getOnlineUserIds(),
         });
@@ -276,6 +270,50 @@ export const initializeSocket = (server) => {
                             userId
                         );
 
+                    /*
+                    * Mark the related message notification
+                    * as read for the current user.
+                    */
+                    const notification =
+                        await Notification.findOne({
+                            recipient: userId,
+                            message: message._id,
+                            read: false,
+                        });
+
+                    if (notification) {
+                        await markNotificationAsRead(
+                            notification._id,
+                            userId
+                        );
+
+                        /*
+                        * Tell the current user's UI that
+                        * the notification count changed.
+                        */
+                        io.to(
+                            `user:${userId}`
+                        ).emit(
+                            "notification-read",
+                            {
+                                notificationId:
+                                    notification._id.toString(),
+
+                                type: notification.type,
+
+                                conversationId:
+                                    message.conversation.toString(),
+
+                                messageId:
+                                    message._id.toString(),
+                            }
+                        );
+                    }
+
+                    /*
+                    * Tell the original sender that the
+                    * message has been read.
+                    */
                     io.to(
                         `user:${message.sender.toString()}`
                     ).emit(
@@ -289,6 +327,15 @@ export const initializeSocket = (server) => {
 
                             readAt:
                                 message.readAt,
+                        }
+                    );
+                      io.to(
+                        `user:${userId}`
+                    ).emit(
+                        "notification-read",
+                        {
+                            messageId:
+                                message._id.toString(),
                         }
                     );
                 } catch (error) {

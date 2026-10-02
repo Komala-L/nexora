@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { socket } from "../../socket/socket";
 import {
     Bell,
     ChevronDown,
@@ -35,28 +36,63 @@ const Topbar = () => {
 };
 
     useEffect(() => {
-        if (authLoading || !user) {
-            return;
-        }
+    if (authLoading || !user) {
+        return;
+    }
 
+    fetchUnreadCount();
+
+    const handleNotificationsUpdated = () => {
         fetchUnreadCount();
+    };
 
-        const handleNotificationsUpdated = () => {
-            fetchUnreadCount();
-        };
+    const handleNewMessage = () => {
+        setUnreadCount((previousCount) => {
+            return previousCount + 1;
+        });
+    };
 
-        window.addEventListener(
+    const handleNotificationRead = () => {
+        setUnreadCount((previousCount) => {
+            return Math.max(
+                previousCount - 1,
+                0
+            );
+        });
+    };
+
+    window.addEventListener(
+        "notificationsUpdated",
+        handleNotificationsUpdated
+    );
+
+    socket.on(
+        "new-message",
+        handleNewMessage
+    );
+
+    socket.on(
+        "notification-read",
+        handleNotificationRead
+    );
+
+    return () => {
+        window.removeEventListener(
             "notificationsUpdated",
             handleNotificationsUpdated
         );
 
-        return () => {
-            window.removeEventListener(
-                "notificationsUpdated",
-                handleNotificationsUpdated
-            );
-        };
-    }, [authLoading, user]);
+        socket.off(
+            "new-message",
+            handleNewMessage
+        );
+
+        socket.off(
+            "notification-read",
+            handleNotificationRead
+        );
+    };
+}, [authLoading, user]);
 
     return (
         <header className="flex h-20 items-center gap-4 border-b border-slate-200 bg-white px-4 sm:px-6">

@@ -17,7 +17,6 @@ const ensureUserExists = async (userId) => {
     }
 };
 
-
 const getAcceptedConnection = async (
     userId,
     otherUserId
@@ -88,49 +87,6 @@ export const createConversation = async (
     return conversation;
 };
 
-// export const getUserConversations = async (
-//     userId,
-//     pagination = {}
-// ) => {
-//     const page = Number(pagination.page) || 1;
-//     const limit = Number(pagination.limit) || 20;
-//     const skip = (page - 1) * limit;
-
-//     const filter = {
-//         participants: userId,
-//     };
-
-//     const [conversations, total] = await Promise.all([
-//         Conversation.find(filter)
-//             .populate(
-//                 "participants",
-//                 "_id name profilePic"
-//             )
-//             .sort({
-//                 lastMessageAt: -1,
-//                 updatedAt: -1,
-//             })
-//             .skip(skip)
-//             .limit(limit)
-//             .lean(),
-
-//         Conversation.countDocuments(filter),
-//     ]);
-
-//     return {
-//         conversations,
-//         pagination: {
-//             page,
-//             limit,
-//             total,
-//             totalPages: Math.ceil(total / limit),
-//         },
-//     };
-// };
-
-
-
-
 export const getUserConversations = async (
     userId,
     pagination = {}
@@ -161,12 +117,6 @@ export const getUserConversations = async (
             Conversation.countDocuments(filter),
         ]);
 
-    /*
-     * --------------------------------------------------
-     * GET LAST MESSAGE + UNREAD COUNT
-     * --------------------------------------------------
-     */
-
     const conversationIds =
         conversations.map(
             (conversation) =>
@@ -176,10 +126,6 @@ export const getUserConversations = async (
     if (conversationIds.length > 0) {
         const [latestMessages, unreadCounts] =
             await Promise.all([
-                /*
-                 * Get the latest message of
-                 * every conversation.
-                 */
                 Message.aggregate([
                     {
                         $match: {
@@ -205,12 +151,6 @@ export const getUserConversations = async (
                     },
                 ]),
 
-                /*
-                 * Count messages which:
-                 * - belong to these conversations
-                 * - were NOT sent by the current user
-                 * - have not been read yet
-                 */
                 Message.aggregate([
                     {
                         $match: {
@@ -237,10 +177,6 @@ export const getUserConversations = async (
                 ]),
             ]);
 
-        /*
-         * Create quick lookup maps.
-         */
-
         const latestMessageMap =
             new Map();
 
@@ -264,11 +200,6 @@ export const getUserConversations = async (
                 );
             }
         );
-
-        /*
-         * Attach lastMessage and unreadCount
-         * to every conversation.
-         */
 
         conversations.forEach(
             (conversation) => {
@@ -301,9 +232,6 @@ export const getUserConversations = async (
         },
     };
 };
-
-
-
 
 export const getConversationById = async (
     conversationId,

@@ -1,6 +1,7 @@
 import Message from "../models/message.model.js";
 import Conversation from "../models/conversation.model.js";
 import ApiError from "../utils/apiError.js";
+import Notification from "../models/notification.model.js";
 
 /**
  * Mark a message as delivered.
@@ -115,6 +116,19 @@ export const markMessageRead = async (
             message.readAt = new Date();
 
             await message.save();
+
+            await Notification.updateOne(
+                {
+                    recipient: userId,
+                    message: message._id,
+                    read: false,
+                },
+                {
+                    $set: {
+                        read: true,
+                    },
+                }
+            );
         }
     }
 
