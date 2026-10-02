@@ -40,6 +40,10 @@ const Chat = () => {
     const [sending, setSending] = useState(false);
     const [error, setError] = useState("");
 
+    const [messagePage, setMessagePage] = useState(1);
+    const [hasMoreMessages, setHasMoreMessages] = useState(true);
+    const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
+
     const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
     const [lastSeenAt, setLastSeenAt] = useState(null);
     
@@ -57,6 +61,7 @@ const Chat = () => {
     const shouldAutoScrollRef = useRef(true);
     const typingTimeoutRef = useRef(null);
     const isTypingRef = useRef(false);
+    const messagePageRef = useRef(1);
 
     /*
      * --------------------------------------------------
@@ -224,6 +229,10 @@ const Chat = () => {
     useEffect(() => {
         const fetchChat = async () => {
             try {
+                messagePageRef.current = 1;
+                setMessagePage(1);
+                setHasMoreMessages(true);
+
                 setLoading(true);
                 setError("");
 
@@ -232,7 +241,7 @@ const Chat = () => {
                     messagesResponse,
                 ] = await Promise.all([
                     getConversation(conversationId),
-                    getMessages(conversationId),
+                    getMessages(conversationId, 1, 20),
                 ]);
 
                 setConversation(
@@ -242,6 +251,14 @@ const Chat = () => {
 
                 setMessages(
                     messagesResponse.data?.messages || []
+                );
+
+                const pagination = messagesResponse.data?.pagination;
+
+                setHasMoreMessages(
+                    pagination
+                        ? pagination.page < pagination.totalPages
+                        : false
                 );
 
                 // Start at the latest message.
@@ -280,7 +297,7 @@ const Chat = () => {
      * MESSAGE SCROLL HANDLER
      * --------------------------------------------------
      */
-    const handleMessagesScroll = () => {
+    const handleMessagesScroll = async () => {
         const container =
             messagesContainerRef.current;
 
@@ -295,6 +312,85 @@ const Chat = () => {
 
         shouldAutoScrollRef.current =
             distanceFromBottom < 120;
+
+        // Load older messages when scrolled near the top.
+        if (
+            container.scrollTop <= 80 &&
+            hasMoreMessages &&
+            !loadingOlderMessages
+        ) {
+            try {
+                setLoadingOlderMessages(true);
+
+                const nextPage =
+                    messagePageRef.current + 1;
+
+                // Save the current scroll position
+                // before adding older messages.
+                const previousScrollHeight =
+                    container.scrollHeight;
+
+                const previousScrollTop =
+                    container.scrollTop;
+
+                const response =
+                    await getMessages(
+                        conversationId,
+                        nextPage,
+                        20
+                    );
+
+                const olderMessages =
+                    response.data?.messages || [];
+
+                const pagination =
+                    response.data?.pagination;
+
+                if (olderMessages.length > 0) {
+                    setMessages((currentMessages) => [
+                        ...olderMessages,
+                        ...currentMessages,
+                    ]);
+
+                    messagePageRef.current =
+                        nextPage;
+
+                    setMessagePage(nextPage);
+
+                    setHasMoreMessages(
+                        pagination
+                            ? pagination.page <
+                                pagination.totalPages
+                            : false
+                    );
+
+                    // Wait for React to render the
+                    // newly added messages, then
+                    // restore the user's position.
+                    requestAnimationFrame(() => {
+                        const newScrollHeight =
+                            container.scrollHeight;
+
+                        const heightDifference =
+                            newScrollHeight -
+                            previousScrollHeight;
+
+                        container.scrollTop =
+                            previousScrollTop +
+                            heightDifference;
+                    });
+                } else {
+                    setHasMoreMessages(false);
+                }
+            } catch (error) {
+                setError(
+                    error.message ||
+                    "Failed to load older messages"
+                );
+            } finally {
+                setLoadingOlderMessages(false);
+            }
+        }
     };
 
     /*
@@ -630,6 +726,50 @@ const Chat = () => {
                 minute: "2-digit",
             }
         );
+    };
+
+    const isSameCalendarDay = (date1, date2) => {
+        if (!date1 || !date2) {
+            return false;
+        }
+
+        const firstDate = new Date(date1);
+        const secondDate = new Date(date2);
+
+        return (
+            firstDate.getFullYear() ===
+                secondDate.getFullYear() &&
+            firstDate.getMonth() ===
+                secondDate.getMonth() &&
+            firstDate.getDate() ===
+                secondDate.getDate()
+        );
+    };
+
+    const formatDateSeparator = (date) => {
+        if (!date) {
+            return "";
+        }
+
+        const messageDate = new Date(date);
+        const today = new Date();
+
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+
+        if (isSameCalendarDay(messageDate, today)) {
+            return "Today";
+        }
+
+        if (isSameCalendarDay(messageDate, yesterday)) {
+            return "Yesterday";
+        }
+
+        return messageDate.toLocaleDateString([], {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+        });
     };
 
     const renderMessageAttachments = (message) => {
@@ -1517,102 +1657,122 @@ const Chat = () => {
                 <div
                     ref={messagesContainerRef}
                     onScroll={handleMessagesScroll}
-                    className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-6"
+                    className="relative min-h-0 flex-1 overflow-y-auto bg-slate-50 p-6"
                 >
-                    {messages.length === 0 ? (
-                        <div className="flex h-full items-center justify-center">
-                            <p className="text-sm text-slate-500">
-                                No messages yet. Start the
-                                conversation.
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            {messages.map(
-                                (message) => {
-                                    const isOwnMessage =
-                                        String(
-                                            message.sender?._id
-                                        ) ===
-                                        String(
-                                            user?._id
-                                        );
-
-                                    return (
-                                        <div
-                                            key={
-                                                message._id
-                                            }
-                                            className={`flex ${
-                                                isOwnMessage
-                                                    ? "justify-end"
-                                                    : "justify-start"
-                                            }`}
-                                        >
-                                            <div
-                                                className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
-                                                    isOwnMessage
-                                                        ? "rounded-br-md bg-indigo-600 text-white"
-                                                        : "rounded-bl-md bg-white text-slate-900 shadow-sm"
-                                                }`}
-                                            >
-                                                <div className="min-w-0">
-
-                                                    {/* Text */}
-                                                    {message.content && (
-                                                        <div className="break-words">
-                                                            {renderMessageContent(
-                                                                message.content
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Attachment */}
-                                                    {renderMessageAttachments(message)}
-
-                                                    {/* Time + ticks */}
-                                                    <div
-                                                        className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${
-                                                            isOwnMessage
-                                                                ? "text-indigo-100"
-                                                                : "text-slate-400"
-                                                        }`}
-                                                    >
-                                                        <span>
-                                                            {formatMessageTime(
-                                                                message.createdAt
-                                                            )}
-                                                        </span>
-
-                                                        {isOwnMessage && (
-                                                            <span
-                                                                className={
-                                                                    message.readAt
-                                                                        ? "text-sky-400"
-                                                                        : ""
-                                                                }
-                                                            >
-                                                                {message.readAt
-                                                                    ? "✓✓"
-                                                                    : message.deliveredAt
-                                                                        ? "✓✓"
-                                                                        : "✓"}
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                }
-                            )}
+                    {loadingOlderMessages && (
+                        <div className="sticky top-0 z-10 flex justify-center py-2">
+                            <div className="flex items-center gap-2 rounded-full border border-indigo-100 bg-white/95 px-3 py-1.5 text-xs font-medium text-indigo-600 shadow-sm backdrop-blur-sm">
+                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
+                                Loading older messages
+                            </div>
                         </div>
                     )}
 
-                    {/* Scroll target */}
-                    <div ref={messagesEndRef} />
+                    <div className="flex flex-col gap-3">
+                        {messages.map((message, index) => {
+                            const isOwnMessage =
+                                String(message.sender?._id) ===
+                                String(user?._id);
+
+                            const previousMessage =
+                                messages[index - 1];
+
+                            const shouldShowDateSeparator =
+                                index === 0 ||
+                                !isSameCalendarDay(
+                                    previousMessage?.createdAt,
+                                    message.createdAt
+                                );
+
+                            return (
+                                <div key={message._id}>
+                                    {/* Date separator */}
+                                    {shouldShowDateSeparator && (
+                                        <div className="my-5 flex items-center gap-3">
+                                            <div className="h-px flex-1 bg-slate-200" />
+
+                                            <span className="shrink-0 rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-medium text-indigo-700 shadow-sm">
+                                                {formatDateSeparator(
+                                                    message.createdAt
+                                                )}
+                                            </span>
+
+                                            <div className="h-px flex-1 bg-slate-200" />
+                                        </div>
+                                    )}
+
+                                    {/* Message */}
+                                    <div
+                                        className={`flex ${
+                                            isOwnMessage
+                                                ? "justify-end"
+                                                : "justify-start"
+                                        }`}
+                                    >
+                                        <div
+                                            className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
+                                                isOwnMessage
+                                                    ? "rounded-br-md bg-indigo-600 text-white"
+                                                    : "rounded-bl-md bg-white text-slate-900 shadow-sm"
+                                            }`}
+                                        >
+                                            <div className="min-w-0">
+
+                                                {/* Text */}
+                                                {message.content && (
+                                                    <div className="break-words">
+                                                        {renderMessageContent(
+                                                            message.content
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Attachment */}
+                                                {renderMessageAttachments(
+                                                    message
+                                                )}
+
+                                                {/* Time + ticks */}
+                                                <div
+                                                    className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${
+                                                        isOwnMessage
+                                                            ? "text-indigo-100"
+                                                            : "text-slate-400"
+                                                    }`}
+                                                >
+                                                    <span>
+                                                        {formatMessageTime(
+                                                            message.createdAt
+                                                        )}
+                                                    </span>
+
+                                                    {isOwnMessage && (
+                                                        <span
+                                                            className={
+                                                                message.readAt
+                                                                    ? "text-sky-400"
+                                                                    : ""
+                                                            }
+                                                        >
+                                                            {message.readAt
+                                                                ? "✓✓"
+                                                                : message.deliveredAt
+                                                                    ? "✓✓"
+                                                                    : "✓"}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        <div ref={messagesEndRef} />
+                    </div>
                 </div>
+    
 
                 {/* Error */}
                 {error && (

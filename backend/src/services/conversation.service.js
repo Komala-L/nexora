@@ -2,7 +2,7 @@ import Connection from "../models/connection.model.js";
 import Conversation from "../models/conversation.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/apiError.js";
-
+import Message from "../models/message.model.js";
 
 const ensureUserExists = async (userId) => {
     const userExists = await User.exists({
@@ -88,6 +88,49 @@ export const createConversation = async (
     return conversation;
 };
 
+// export const getUserConversations = async (
+//     userId,
+//     pagination = {}
+// ) => {
+//     const page = Number(pagination.page) || 1;
+//     const limit = Number(pagination.limit) || 20;
+//     const skip = (page - 1) * limit;
+
+//     const filter = {
+//         participants: userId,
+//     };
+
+//     const [conversations, total] = await Promise.all([
+//         Conversation.find(filter)
+//             .populate(
+//                 "participants",
+//                 "_id name profilePic"
+//             )
+//             .sort({
+//                 lastMessageAt: -1,
+//                 updatedAt: -1,
+//             })
+//             .skip(skip)
+//             .limit(limit)
+//             .lean(),
+
+//         Conversation.countDocuments(filter),
+//     ]);
+
+//     return {
+//         conversations,
+//         pagination: {
+//             page,
+//             limit,
+//             total,
+//             totalPages: Math.ceil(total / limit),
+//         },
+//     };
+// };
+
+
+
+
 export const getUserConversations = async (
     userId,
     pagination = {}
@@ -100,22 +143,150 @@ export const getUserConversations = async (
         participants: userId,
     };
 
-    const [conversations, total] = await Promise.all([
-        Conversation.find(filter)
-            .populate(
-                "participants",
-                "_id name profilePic"
-            )
-            .sort({
-                lastMessageAt: -1,
-                updatedAt: -1,
-            })
-            .skip(skip)
-            .limit(limit)
-            .lean(),
+    const [conversations, total] =
+        await Promise.all([
+            Conversation.find(filter)
+                .populate(
+                    "participants",
+                    "_id name profilePic"
+                )
+                .sort({
+                    lastMessageAt: -1,
+                    updatedAt: -1,
+                })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
 
-        Conversation.countDocuments(filter),
-    ]);
+            Conversation.countDocuments(filter),
+        ]);
+
+    /*
+     * --------------------------------------------------
+     * GET LAST MESSAGE + UNREAD COUNT
+     * --------------------------------------------------
+     */
+
+    const conversationIds =
+        conversations.map(
+            (conversation) =>
+                conversation._id
+        );
+
+    if (conversationIds.length > 0) {
+        const [latestMessages, unreadCounts] =
+            await Promise.all([
+                /*
+                 * Get the latest message of
+                 * every conversation.
+                 */
+                Message.aggregate([
+                    {
+                        $match: {
+                            conversation: {
+                                $in: conversationIds,
+                            },
+                        },
+                    },
+
+                    {
+                        $sort: {
+                            createdAt: -1,
+                        },
+                    },
+
+                    {
+                        $group: {
+                            _id: "$conversation",
+                            lastMessage: {
+                                $first: "$$ROOT",
+                            },
+                        },
+                    },
+                ]),
+
+                /*
+                 * Count messages which:
+                 * - belong to these conversations
+                 * - were NOT sent by the current user
+                 * - have not been read yet
+                 */
+                Message.aggregate([
+                    {
+                        $match: {
+                            conversation: {
+                                $in: conversationIds,
+                            },
+
+                            sender: {
+                                $ne: userId,
+                            },
+
+                            readAt: null,
+                        },
+                    },
+
+                    {
+                        $group: {
+                            _id: "$conversation",
+                            count: {
+                                $sum: 1,
+                            },
+                        },
+                    },
+                ]),
+            ]);
+
+        /*
+         * Create quick lookup maps.
+         */
+
+        const latestMessageMap =
+            new Map();
+
+        latestMessages.forEach(
+            (item) => {
+                latestMessageMap.set(
+                    String(item._id),
+                    item.lastMessage
+                );
+            }
+        );
+
+        const unreadCountMap =
+            new Map();
+
+        unreadCounts.forEach(
+            (item) => {
+                unreadCountMap.set(
+                    String(item._id),
+                    item.count
+                );
+            }
+        );
+
+        /*
+         * Attach lastMessage and unreadCount
+         * to every conversation.
+         */
+
+        conversations.forEach(
+            (conversation) => {
+                const conversationId =
+                    String(conversation._id);
+
+                conversation.lastMessage =
+                    latestMessageMap.get(
+                        conversationId
+                    ) || null;
+
+                conversation.unreadCount =
+                    unreadCountMap.get(
+                        conversationId
+                    ) || 0;
+            }
+        );
+    }
 
     return {
         conversations,
@@ -123,10 +294,16 @@ export const getUserConversations = async (
             page,
             limit,
             total,
-            totalPages: Math.ceil(total / limit),
+            totalPages:
+                Math.ceil(
+                    total / limit
+                ),
         },
     };
 };
+
+
+
 
 export const getConversationById = async (
     conversationId,
