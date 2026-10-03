@@ -2,7 +2,7 @@ import Connection from "../models/connection.model.js";
 import Conversation from "../models/conversation.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/apiError.js";
-
+import Message from "../models/message.model.js";
 
 const ensureUserExists = async (userId) => {
     const userExists = await User.exists({
@@ -16,7 +16,6 @@ const ensureUserExists = async (userId) => {
         );
     }
 };
-
 
 const getAcceptedConnection = async (
     userId,
@@ -100,22 +99,125 @@ export const getUserConversations = async (
         participants: userId,
     };
 
-    const [conversations, total] = await Promise.all([
-        Conversation.find(filter)
-            .populate(
-                "participants",
-                "_id name profilePic"
-            )
-            .sort({
-                lastMessageAt: -1,
-                updatedAt: -1,
-            })
-            .skip(skip)
-            .limit(limit)
-            .lean(),
+    const [conversations, total] =
+        await Promise.all([
+            Conversation.find(filter)
+                .populate(
+                    "participants",
+                    "_id name profilePic"
+                )
+                .sort({
+                    lastMessageAt: -1,
+                    updatedAt: -1,
+                })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
 
-        Conversation.countDocuments(filter),
-    ]);
+            Conversation.countDocuments(filter),
+        ]);
+
+    const conversationIds =
+        conversations.map(
+            (conversation) =>
+                conversation._id
+        );
+
+    if (conversationIds.length > 0) {
+        const [latestMessages, unreadCounts] =
+            await Promise.all([
+                Message.aggregate([
+                    {
+                        $match: {
+                            conversation: {
+                                $in: conversationIds,
+                            },
+                        },
+                    },
+
+                    {
+                        $sort: {
+                            createdAt: -1,
+                        },
+                    },
+
+                    {
+                        $group: {
+                            _id: "$conversation",
+                            lastMessage: {
+                                $first: "$$ROOT",
+                            },
+                        },
+                    },
+                ]),
+
+                Message.aggregate([
+                    {
+                        $match: {
+                            conversation: {
+                                $in: conversationIds,
+                            },
+
+                            sender: {
+                                $ne: userId,
+                            },
+
+                            readAt: null,
+                        },
+                    },
+
+                    {
+                        $group: {
+                            _id: "$conversation",
+                            count: {
+                                $sum: 1,
+                            },
+                        },
+                    },
+                ]),
+            ]);
+
+        const latestMessageMap =
+            new Map();
+
+        latestMessages.forEach(
+            (item) => {
+                latestMessageMap.set(
+                    String(item._id),
+                    item.lastMessage
+                );
+            }
+        );
+
+        const unreadCountMap =
+            new Map();
+
+        unreadCounts.forEach(
+            (item) => {
+                unreadCountMap.set(
+                    String(item._id),
+                    item.count
+                );
+            }
+        );
+
+        conversations.forEach(
+            (conversation) => {
+                const conversationId =
+                    String(conversation._id);
+
+                conversation.lastMessage =
+                    latestMessageMap.get(
+                        conversationId
+                    ) || null;
+
+                conversation.unreadCount =
+                    unreadCountMap.get(
+                        conversationId
+                    ) || 0;
+            }
+        );
+    }
 
     return {
         conversations,
@@ -123,7 +225,10 @@ export const getUserConversations = async (
             page,
             limit,
             total,
-            totalPages: Math.ceil(total / limit),
+            totalPages:
+                Math.ceil(
+                    total / limit
+                ),
         },
     };
 };

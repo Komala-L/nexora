@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { socket } from "../../socket/socket";
 
 import {
     getMyConversations,
@@ -17,48 +18,89 @@ const Messages = () => {
     const [conversations, setConversations] = useState([]);
     const [connections, setConnections] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [startingConversation, setStartingConversation] =
-        useState(null);
+    const [startingConversation, setStartingConversation] = useState(null);
     const [error, setError] = useState("");
 
+    /*
+     * --------------------------------------------------
+     * FETCH MESSAGES PAGE DATA
+     * --------------------------------------------------
+     */
+    const fetchMessagesData = async (showLoading = false) => {
+        try {
+            if (showLoading) {
+                setLoading(true);
+            }
+
+            setError("");
+
+            const [
+                conversationsResponse,
+                connectionsResponse,
+            ] = await Promise.all([
+                getMyConversations(),
+                getMyConnections(),
+            ]);
+
+            setConversations(
+                conversationsResponse.data?.conversations || []
+            );
+
+            setConnections(
+                connectionsResponse.data?.connections || []
+            );
+        } catch (error) {
+            setError(
+                error.message ||
+                "Failed to load messages"
+            );
+        } finally {
+            if (showLoading) {
+                setLoading(false);
+            }
+        }
+    };
+
+    /*
+     * --------------------------------------------------
+     * INITIAL LOAD
+     * --------------------------------------------------
+     */
     useEffect(() => {
         if (authLoading || !user) {
             return;
         }
 
-        const fetchMessagesData = async () => {
-            try {
-                setLoading(true);
-                setError("");
-
-                const [
-                    conversationsResponse,
-                    connectionsResponse,
-                ] = await Promise.all([
-                    getMyConversations(),
-                    getMyConnections(),
-                ]);
-
-                setConversations(
-                    conversationsResponse.data?.conversations || []
-                );
-
-                setConnections(
-                    connectionsResponse.data?.connections || []
-                );
-            } catch (error) {
-                setError(
-                    error.message ||
-                    "Failed to load messages"
-                );
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchMessagesData();
+        fetchMessagesData(true);
     }, [authLoading, user]);
 
+    /*
+     * --------------------------------------------------
+     * REAL-TIME CONVERSATION LIST UPDATE
+     * --------------------------------------------------
+     */
+    useEffect(() => {
+        if (authLoading || !user) {
+            return;
+        }
+
+        const handleNewMessage = () => {
+            fetchMessagesData(false);
+        };
+
+        socket.on(
+            "new-message",
+            handleNewMessage
+        );
+
+        return () => {
+            socket.off(
+                "new-message",
+                handleNewMessage
+            );
+        };
+    }, [authLoading, user]);
+    
     const getOtherParticipant = (conversation) => {
         return conversation.participants.find(
             (participant) =>
@@ -75,6 +117,25 @@ const Messages = () => {
                     String(userId)
             )
         );
+    };
+
+    const getLastMessagePreview = (conversation) => {
+        if (!conversation?.lastMessage) {
+            return "Open conversation";
+        }
+
+        const { type, content } =
+            conversation.lastMessage;
+
+        if (type === "image") {
+            return "📷 Photo";
+        }
+
+        if (type === "document") {
+            return "📎 Document";
+        }
+
+        return content || "Message";
     };
 
     const handleStartConversation = async (userId) => {
@@ -255,15 +316,38 @@ const Messages = () => {
 
                                     {/* User information */}
                                     <div className="min-w-0 flex-1">
-                                        <h3 className="truncate font-semibold text-slate-900">
-                                            {otherUser.name}
-                                        </h3>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <h3
+                                                className={`truncate font-semibold ${
+                                                    conversation?.unreadCount > 0
+                                                        ? "text-slate-900"
+                                                        : "text-slate-900"
+                                                }`}
+                                            >
+                                                {otherUser.name}
+                                            </h3>
 
-                                        <p className="mt-1 text-sm text-slate-500">
+                                            {/* Unread count */}
+                                            {conversation?.unreadCount > 0 && (
+                                                <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[11px] font-semibold text-white">
+                                                    {conversation.unreadCount > 99
+                                                        ? "99+"
+                                                        : conversation.unreadCount}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <p
+                                            className={`mt-1 truncate text-sm ${
+                                                conversation?.unreadCount > 0
+                                                    ? "font-medium text-slate-700"
+                                                    : "text-slate-500"
+                                            }`}
+                                        >
                                             {isStarting
                                                 ? "Starting conversation..."
                                                 : hasConversation
-                                                    ? "Open conversation"
+                                                    ? getLastMessagePreview(conversation)
                                                     : "Start a conversation"}
                                         </p>
                                     </div>

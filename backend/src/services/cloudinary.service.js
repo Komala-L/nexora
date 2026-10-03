@@ -26,6 +26,58 @@ export const uploadImage = (
     });
 };
 
+export const uploadChatAttachment = (
+    buffer,
+    {
+        mimeType,
+        fileName,
+        folder = "nexora/chat-attachments",
+    } = {}
+) => {
+    return new Promise((resolve, reject) => {
+        const isImage =
+            mimeType?.startsWith("image/");
+
+        const safeFileName = fileName
+            ? fileName.replace(
+                /[^a-zA-Z0-9._-]/g,
+                "_"
+            )
+            : `attachment-${Date.now()}`;
+
+        const uploadStream =
+            cloudinary.uploader.upload_stream(
+                {
+                    folder,
+                    resource_type: isImage
+                        ? "image"
+                        : "raw",
+
+                    public_id: isImage
+                        ? undefined
+                        : safeFileName,
+                },
+                (error, result) => {
+                    if (error) {
+                        return reject(error);
+                    }
+
+                    resolve({
+                        url: result.secure_url,
+                        publicId: result.public_id,
+                        resourceType:
+                            result.resource_type,
+                        fileName:
+                            fileName ||
+                            safeFileName,
+                        mimeType,
+                    });
+                }
+            );
+
+        uploadStream.end(buffer);
+    });
+};
 
 export const deleteImage = async (fileId) => {
     const result = await cloudinary.uploader.destroy(fileId, {

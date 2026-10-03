@@ -5,6 +5,7 @@ import {
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import ApiError from "../utils/apiError.js";
+import { getIO } from "../socket/socket.js";
 
 const getConversationForUser = async (
     conversationId,
@@ -38,10 +39,17 @@ const getConversationForUser = async (
 };
 
 
+/**
+ * Send a message in a conversation.
+ */
 export const sendMessage = async (
     conversationId,
     senderId,
-    content
+    {
+        type = "text",
+        content = "",
+        attachments = [],
+    } = {}
 ) => {
     const conversation =
         await getConversationForUser(
@@ -49,13 +57,43 @@ export const sendMessage = async (
             senderId
         );
 
+    const normalizedContent =
+        typeof content === "string"
+            ? content.trim()
+            : "";
+
+   
+    if (
+        type === "text" &&
+        !normalizedContent
+    ) {
+        throw new ApiError(
+            400,
+            "Message content is required"
+        );
+    }
+
+    if (
+        (type === "image" ||
+            type === "document") &&
+        attachments.length === 0
+    ) {
+        throw new ApiError(
+            400,
+            "Attachment is required for this message type"
+        );
+    }
+
     const message = await Message.create({
         conversation: conversation._id,
         sender: senderId,
-        content,
+        type,
+        content: normalizedContent,
+        attachments,
     });
 
-    conversation.lastMessageAt = message.createdAt;
+    conversation.lastMessageAt =
+        message.createdAt;
 
     await conversation.save();
 
@@ -89,9 +127,23 @@ export const sendMessage = async (
             )
             .lean();
 
+    const io = getIO();
+
+    io.to(`user:${recipientId}`).emit(
+        "new-message",
+        {
+            ...populatedMessage,
+            conversation: conversation._id,
+        }
+    );
+
     return populatedMessage;
 };
 
+
+/**
+ * Get messages from a conversation.
+ */
 export const getConversationMessages = async (
     conversationId,
     userId,
@@ -103,29 +155,35 @@ export const getConversationMessages = async (
             userId
         );
 
-    const page = Number(pagination.page) || 1;
-    const limit = Number(pagination.limit) || 20;
-    const skip = (page - 1) * limit;
+    const page =
+        Number(pagination.page) || 1;
+
+    const limit =
+        Number(pagination.limit) || 20;
+
+    const skip =
+        (page - 1) * limit;
 
     const filter = {
         conversation: conversation._id,
     };
 
-    const [messages, total] = await Promise.all([
-        Message.find(filter)
-            .populate(
-                "sender",
-                "_id name profilePic"
-            )
-            .sort({
-                createdAt: -1,
-            })
-            .skip(skip)
-            .limit(limit)
-            .lean(),
+    const [messages, total] =
+        await Promise.all([
+            Message.find(filter)
+                .populate(
+                    "sender",
+                    "_id name profilePic"
+                )
+                .sort({
+                    createdAt: -1,
+                })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
 
-        Message.countDocuments(filter),
-    ]);
+            Message.countDocuments(filter),
+        ]);
 
     messages.reverse();
 
@@ -135,7 +193,10 @@ export const getConversationMessages = async (
             page,
             limit,
             total,
-            totalPages: Math.ceil(total / limit),
+            totalPages:
+                Math.ceil(
+                    total / limit
+                ),
         },
     };
 };

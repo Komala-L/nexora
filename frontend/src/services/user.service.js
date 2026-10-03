@@ -187,3 +187,24 @@ export const removeUserProfileImage = async () => {
 
     return data;
 };
+
+export const getUserPresence = async (userId) => {
+    const response = await fetch(
+        `${API_BASE_URL}/users/${userId}/presence`,
+        {
+            method: "GET",
+            credentials: "include",
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+            "Failed to fetch user presence"
+        );
+    }
+
+    return data;
+};
