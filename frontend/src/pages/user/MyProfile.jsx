@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     UserRound,
     Mail,
@@ -10,6 +10,8 @@ import {
     Sparkles,
     ShieldCheck,
     User,
+    CheckCircle2,
+    ArrowRight,
 } from "lucide-react";
 
 import { getCurrentUser } from "../../services/user.service";
@@ -19,7 +21,8 @@ const MyProfile = () => {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
-    const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+    const [isEditProfileOpen, setIsEditProfileOpen] =
+        useState(false);
 
     const fetchProfile = async () => {
         try {
@@ -47,6 +50,101 @@ const MyProfile = () => {
     useEffect(() => {
         fetchProfile();
     }, []);
+
+    /* -------------------------------------------------
+       PROFILE COMPLETION
+    ------------------------------------------------- */
+
+    const profileCompletion = useMemo(() => {
+        if (!user) {
+            return {
+                percentage: 0,
+                completed: 0,
+                total: 7,
+                missing: [],
+            };
+        }
+
+        const checks = [
+            {
+                label: "Profile picture",
+                completed: Boolean(user.profilePic?.url),
+            },
+            {
+                label: "Name",
+                completed: Boolean(user.name?.trim()),
+            },
+            {
+                label: "Bio",
+                completed: Boolean(user.bio?.trim()),
+            },
+            {
+                label: "Interests",
+                completed:
+                    Array.isArray(user.interests) &&
+                    user.interests.length > 0,
+            },
+            {
+                label: "Professional details",
+                completed:
+                    Boolean(user.professional) &&
+                    Boolean(
+                        user.professional.role ||
+                            user.professional.company ||
+                            user.professional.industry ||
+                            user.professional.skills?.length
+                    ),
+            },
+            {
+                label: "Learning details",
+                completed:
+                    Boolean(user.learning) &&
+                    Boolean(
+                        user.learning.learningGoal ||
+                            user.learning.subjects?.length
+                    ),
+            },
+            {
+                label: "Discovery preferences",
+                completed:
+                    Array.isArray(
+                        user.discoveryPreferences
+                    ) &&
+                    user.discoveryPreferences.length > 0,
+            },
+        ];
+
+        const completed = checks.filter(
+            (item) => item.completed
+        ).length;
+
+        const missing = checks
+            .filter((item) => !item.completed)
+            .map((item) => item.label);
+
+        return {
+            percentage: Math.round(
+                (completed / checks.length) * 100
+            ),
+            completed,
+            total: checks.length,
+            missing,
+        };
+    }, [user]);
+
+    const getCompletionMessage = () => {
+        const { percentage, missing } = profileCompletion;
+
+        if (percentage === 100) {
+            return "Your profile is complete. You're ready to make the most of Nexora.";
+        }
+
+        if (percentage >= 70) {
+            return `You're almost there. Add ${missing[0]?.toLowerCase() || "the remaining details"} to strengthen your profile.`;
+        }
+
+        return "Complete your profile so people can better understand who you are and what you're looking for.";
+    };
 
     const getInitial = (name) => {
         return (
@@ -183,6 +281,129 @@ const MyProfile = () => {
                 </div>
             </div>
 
+            {/* -------------------------------------------------
+                PROFILE COMPLETION
+            ------------------------------------------------- */}
+
+            <section className="relative overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-cyan-50 p-6 shadow-sm sm:p-7">
+                <div className="absolute -right-20 -top-24 h-56 w-56 rounded-full bg-indigo-200/30 blur-3xl" />
+
+                <div className="absolute -bottom-24 -left-20 h-52 w-52 rounded-full bg-cyan-200/30 blur-3xl" />
+
+                <div className="relative">
+                    <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-4">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm">
+                                {profileCompletion.percentage ===
+                                100 ? (
+                                    <CheckCircle2
+                                        size={22}
+                                        className="text-emerald-500"
+                                    />
+                                ) : (
+                                    <Sparkles
+                                        size={22}
+                                        className="text-indigo-600"
+                                    />
+                                )}
+                            </div>
+
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-indigo-500">
+                                    Profile strength
+                                </p>
+
+                                <h2 className="mt-1 text-xl font-bold text-slate-900">
+                                    {profileCompletion.percentage ===
+                                    100
+                                        ? "Profile complete"
+                                        : `${profileCompletion.percentage}% complete`}
+                                </h2>
+
+                                <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
+                                    {getCompletionMessage()}
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setIsEditProfileOpen(true)
+                            }
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-md sm:w-auto"
+                        >
+                            <Pencil size={16} />
+
+                            {profileCompletion.percentage ===
+                            100
+                                ? "Edit Profile"
+                                : "Complete Profile"}
+
+                            <ArrowRight size={16} />
+                        </button>
+                    </div>
+
+                    {/* Progress bar */}
+
+                    <div className="mt-6">
+                        <div className="mb-2 flex items-center justify-between text-xs font-semibold">
+                            <span className="text-slate-500">
+                                Profile completion
+                            </span>
+
+                            <span className="text-indigo-600">
+                                {
+                                    profileCompletion.completed
+                                }{" "}
+                                /{" "}
+                                {
+                                    profileCompletion.total
+                                }
+                            </span>
+                        </div>
+
+                        <div className="h-2.5 overflow-hidden rounded-full bg-white shadow-inner">
+                            <div
+                                className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-500 transition-all duration-500"
+                                style={{
+                                    width: `${profileCompletion.percentage}%`,
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Missing fields */}
+
+                    {profileCompletion.missing
+                        .length > 0 && (
+                        <div className="mt-5 flex flex-wrap gap-2">
+                            {profileCompletion.missing
+                                .slice(0, 4)
+                                .map((item) => (
+                                    <span
+                                        key={item}
+                                        className="rounded-lg border border-white bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-500"
+                                    >
+                                        Add {item}
+                                    </span>
+                                ))}
+
+                            {profileCompletion.missing
+                                .length > 4 && (
+                                <span className="rounded-lg border border-white bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-400">
+                                    +
+                                    {profileCompletion
+                                        .missing
+                                        .length - 4}{" "}
+                                    more
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </section>
+
             {/* HERO */}
 
             <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -235,9 +456,7 @@ const MyProfile = () => {
                                 {user.gender && (
                                     <>
                                         <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5">
-                                            <User
-                                                size={14}
-                                            />
+                                            <User size={14} />
                                             {user.gender}
                                         </span>
 
@@ -253,15 +472,6 @@ const MyProfile = () => {
                                 </span>
                             </div>
                         </div>
-
-                        <button
-                            type="button"
-                            onClick={() => setIsEditProfileOpen(true)}
-                            className="inline-flex w-fit items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-md"
-                        >
-                            <Pencil size={16} />
-                            Edit Profile
-                        </button>
                     </div>
                 </div>
             </section>
@@ -396,7 +606,11 @@ const MyProfile = () => {
                                             Role:
                                         </span>{" "}
                                         <span className="text-slate-500">
-                                            {user.professional.role}
+                                            {
+                                                user
+                                                    .professional
+                                                    .role
+                                            }
                                         </span>
                                     </p>
                                 )}
@@ -407,7 +621,11 @@ const MyProfile = () => {
                                             Company:
                                         </span>{" "}
                                         <span className="text-slate-500">
-                                            {user.professional.company}
+                                            {
+                                                user
+                                                    .professional
+                                                    .company
+                                            }
                                         </span>
                                     </p>
                                 )}
@@ -418,12 +636,17 @@ const MyProfile = () => {
                                             Industry:
                                         </span>{" "}
                                         <span className="text-slate-500">
-                                            {user.professional.industry}
+                                            {
+                                                user
+                                                    .professional
+                                                    .industry
+                                            }
                                         </span>
                                     </p>
                                 )}
 
-                                {user.professional.skills?.length > 0 && (
+                                {user.professional.skills?.length >
+                                    0 && (
                                     <div className="flex flex-wrap gap-2 pt-1">
                                         {user.professional.skills.map(
                                             (skill) => (
@@ -483,12 +706,17 @@ const MyProfile = () => {
                                             Goal:
                                         </span>{" "}
                                         <span className="text-slate-500">
-                                            {user.learning.learningGoal}
+                                            {
+                                                user
+                                                    .learning
+                                                    .learningGoal
+                                            }
                                         </span>
                                     </p>
                                 )}
 
-                                {user.learning.subjects?.length > 0 && (
+                                {user.learning.subjects?.length >
+                                    0 && (
                                     <div className="flex flex-wrap gap-2">
                                         {user.learning.subjects.map(
                                             (subject) => (
@@ -566,18 +794,24 @@ const MyProfile = () => {
                         Your profile information is controlled by you.
                     </div>
                 </div>
-                {isEditProfileOpen && (
-                    <EditProfileModal
-                        user={user}
-                        onClose={() =>
-                            setIsEditProfileOpen(false)
-                        }
-                        onUpdated={(updatedUser) =>
-                            setUser(updatedUser)
-                        }
-                    />
-                )}
             </section>
+
+            {/* -------------------------------------------------
+                EDIT PROFILE MODAL
+                IMPORTANT: outside all profile sections
+            ------------------------------------------------- */}
+
+            {isEditProfileOpen && (
+                <EditProfileModal
+                    user={user}
+                    onClose={() =>
+                        setIsEditProfileOpen(false)
+                    }
+                    onUpdated={(updatedUser) =>
+                        setUser(updatedUser)
+                    }
+                />
+            )}
         </div>
     );
 };

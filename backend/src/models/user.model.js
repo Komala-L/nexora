@@ -67,6 +67,14 @@ const userSchema = new mongoose.Schema({
         enum: ["friends", "professional", "learning"],
         default: ["friends"],
     },
+    profileCompleted: {
+        type: Boolean,
+        default: false,
+    },
+    profileVersion: {
+        type: Number,
+        default: 0,
+    },
     isDiscoverable: {
         type: Boolean,
         default: true,

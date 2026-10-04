@@ -1,8 +1,111 @@
+// import { Navigate, Route, Routes } from "react-router-dom";
+// import Login from "./pages/auth/Login";
+// import Register from "./pages/auth/Register";
+// import ProtectedRoute from "./components/auth/ProtectedRoute";
+// import AppLayout from "./components/layout/AppLayout";
+// import Home from "./pages/user/Home";
+// import Requests from "./pages/user/Requests";
+// import Connections from "./pages/user/Connections";
+// import Profile from "./pages/user/Profile";
+// import Discover from "./pages/user/Discover";
+// import MyProfile from "./pages/user/MyProfile";
+// import Messages from "./pages/user/Messages";
+// import Chat from "./pages/user/Chat";
+// import Notifications from "./pages/user/Notifications";
+// import Settings from "./pages/user/Settings";
+
+// const App = () => {
+//     return (
+//         <Routes>
+//             {/* Public Routes */}
+//             <Route
+//                 path="/"
+//                 element={<Navigate to="/register" replace />}
+//             />
+
+//             <Route
+//                 path="/register"
+//                 element={<Register />}
+//             />
+
+//             <Route
+//                 path="/login"
+//                 element={<Login />}
+//             />
+
+//             {/* Protected User Routes */}
+//             <Route element={<ProtectedRoute />}>
+//                 <Route element={<AppLayout />}>
+//                     <Route
+//                         path="/home"
+//                         element={<Home />}
+//                     />
+
+//                     <Route
+//                         path="/discover"
+//                         element={<Discover />}
+//                     />
+                    
+//                     <Route
+//                         path="/requests"
+//                         element={<Requests />}
+//                     />
+
+//                     <Route 
+//                         path="connections" 
+//                         element={<Connections />} 
+//                     />
+
+//                     <Route
+//                         path="/messages"
+//                         element={<Messages />}
+//                     />
+
+//                     <Route
+//                         path="/messages/:conversationId"
+//                         element={<Chat />}
+//                     />
+
+//                     <Route
+//                         path="/notifications"
+//                         element={<Notifications />}
+//                     />
+
+//                     <Route
+//                         path="/profile"
+//                         element={<MyProfile />}
+//                     />
+
+//                     <Route
+//                         path="/settings"
+//                         element={<Settings />}
+//                     />
+
+//                      <Route
+//                        path="/users/:userId"
+//                        element={<Profile />}
+//                     />
+//                 </Route>
+//             </Route>
+
+//         </Routes>
+//     );
+// };
+
+// export default App;
+
+
+
+
 import { Navigate, Route, Routes } from "react-router-dom";
+
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import ProfileCompletionGate from "./pages/auth/ProfileCompletionGate";
 import AppLayout from "./components/layout/AppLayout";
+
 import Home from "./pages/user/Home";
 import Requests from "./pages/user/Requests";
 import Connections from "./pages/user/Connections";
@@ -17,10 +120,16 @@ import Settings from "./pages/user/Settings";
 const App = () => {
     return (
         <Routes>
-            {/* Public Routes */}
+            {/* ================= PUBLIC ROUTES ================= */}
+
             <Route
                 path="/"
-                element={<Navigate to="/register" replace />}
+                element={
+                    <Navigate
+                        to="/register"
+                        replace
+                    />
+                }
             />
 
             <Route
@@ -33,61 +142,68 @@ const App = () => {
                 element={<Login />}
             />
 
+            {/* ================= PROTECTED ROUTES ================= */}
+
             {/* Protected User Routes */}
             <Route element={<ProtectedRoute />}>
-                <Route element={<AppLayout />}>
-                    <Route
-                        path="/home"
-                        element={<Home />}
-                    />
 
-                    <Route
-                        path="/discover"
-                        element={<Discover />}
-                    />
-                    
-                    <Route
-                        path="/requests"
-                        element={<Requests />}
-                    />
+                {/* Normal Nexora application */}
+                <Route element={<ProfileCompletionGate />}>
+                    <Route element={<AppLayout />}>
 
-                    <Route 
-                        path="connections" 
-                        element={<Connections />} 
-                    />
+                        <Route
+                            path="/home"
+                            element={<Home />}
+                        />
 
-                    <Route
-                        path="/messages"
-                        element={<Messages />}
-                    />
+                        <Route
+                            path="/discover"
+                            element={<Discover />}
+                        />
 
-                    <Route
-                        path="/messages/:conversationId"
-                        element={<Chat />}
-                    />
+                        <Route
+                            path="/requests"
+                            element={<Requests />}
+                        />
 
-                    <Route
-                        path="/notifications"
-                        element={<Notifications />}
-                    />
+                        <Route
+                            path="/connections"
+                            element={<Connections />}
+                        />
 
-                    <Route
-                        path="/profile"
-                        element={<MyProfile />}
-                    />
+                        <Route
+                            path="/messages"
+                            element={<Messages />}
+                        />
 
-                    <Route
-                        path="/settings"
-                        element={<Settings />}
-                    />
+                        <Route
+                            path="/messages/:conversationId"
+                            element={<Chat />}
+                        />
 
-                     <Route
-                       path="/users/:userId"
-                       element={<Profile />}
-                    />
+                        <Route
+                            path="/notifications"
+                            element={<Notifications />}
+                        />
+
+                        <Route
+                            path="/profile"
+                            element={<MyProfile />}
+                        />
+
+                        <Route
+                            path="/settings"
+                            element={<Settings />}
+                        />
+
+                        <Route
+                            path="/users/:userId"
+                            element={<Profile />}
+                        />
+
+                    </Route>
                 </Route>
             </Route>
-
         </Routes>
     );
 };
