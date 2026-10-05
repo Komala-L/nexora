@@ -165,6 +165,18 @@ const userSchema = new mongoose.Schema({
             },
         },
     },
+    locationDetails: {
+        area: {
+            type: String,
+            trim: true,
+            default: null,
+        },
+        city: {
+            type: String,
+            trim: true,
+            default: null,
+        },
+    },
     discoveryLocation: {
         type: {
             type: String,

@@ -4,6 +4,7 @@ import ApiError from "../utils/apiError.js";
 import logger from "../utils/logger.js";
 import { uploadImage, deleteImage } from "./cloudinary.service.js";
 import { generateProtectedLocation } from "../utils/location.utils.js";
+import { reverseGeocode } from "./location.service.js";
 import { isUserOnline } from "../socket/presence.js";
 
 export const CURRENT_PROFILE_VERSION = 1;
@@ -239,8 +240,7 @@ export const updateProfileImage = async (
         }
 
         /*
-         * Delete old image only after the new image has
-         * successfully been saved.
+         * Delete old image only after the new image has successfully been saved.
          */
 
         if (oldFileId) {
@@ -335,7 +335,7 @@ export const removeProfileImage = async (
 
     return User.findById(userId)
         .select(
-            "-password -refreshToken"
+            "-password -rfreshToken"
         );
 };
 
@@ -361,14 +361,21 @@ export const updateLocation = async (
         latitude,
     ] = coordinates;
 
+    /*
+     * Reverse geocode the user's actual coordinates into a readable area and city.
+     */
+    const locationDetails =
+        await reverseGeocode(
+            longitude,
+            latitude
+        );
+
     let discoveryCoordinates =
         coordinates;
 
     /*
-     * Female users receive a protected discovery
-     * location while their real location remains private.
+     * Female users receive a protected discovery location while their actual location remains private.
      */
-
     if (user.gender === "female") {
         discoveryCoordinates =
             generateProtectedLocation(
@@ -377,9 +384,17 @@ export const updateLocation = async (
             );
     }
 
+    /*
+     * Store the actual coordinates.
+     */
     user.location = {
         type: "Point",
         coordinates,
+    };
+
+    user.locationDetails = {
+        area: locationDetails.area,
+        city: locationDetails.city,
     };
 
     user.discoveryLocation = {

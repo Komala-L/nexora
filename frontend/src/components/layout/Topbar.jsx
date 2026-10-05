@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { socket } from "../../socket/socket";
 import {
     Bell,
-    ChevronDown,
     MapPin,
     Search,
 } from "lucide-react";
@@ -349,9 +348,12 @@ const Topbar = () => {
                     className="text-indigo-600"
                 />
 
-                <span>Bangalore, Karnataka</span>
+                <span>
+                    {user?.locationDetails?.area
+                    ? `${user.locationDetails.area}, ${user.locationDetails.city}`
+                    : user?.locationDetails?.city || "Location not set"}
+                </span>
 
-                <ChevronDown size={15} />
             </button>
 
             {/* Notifications */}

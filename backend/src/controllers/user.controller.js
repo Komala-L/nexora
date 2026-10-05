@@ -154,6 +154,7 @@ export const updateUserLocation = asyncHandler(async (req, res) => {
                     id: user._id,
                     name: user.name,
                     gender: user.gender,
+                    locationDetails: user.locationDetails,
                 },
             },
             "Location updated successfully"
