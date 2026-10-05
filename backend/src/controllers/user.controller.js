@@ -9,7 +9,8 @@ import {
     removeProfileImage, 
     updateLocation, 
     getNearbyUsers,
-    discoverUsers
+    discoverUsers,
+    searchUsers,
 } from "../services/user.service.js";
 
 /**
@@ -207,3 +208,31 @@ export const discoverUsersController = asyncHandler(async (req, res) => {
         )
     );
 });
+
+/**
+ * Search users.
+ */
+export const searchUsersController = asyncHandler(
+    async (req, res) => {
+        const {
+            query,
+            page,
+            limit,
+        } = req.validatedQuery;
+
+        const result = await searchUsers(
+            req.user._id,
+            query,
+            page,
+            limit
+        );
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                result,
+                "Users searched successfully"
+            )
+        );
+    }
+);

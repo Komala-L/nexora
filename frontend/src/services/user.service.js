@@ -208,3 +208,34 @@ export const getUserPresence = async (userId) => {
 
     return data;
 };
+
+export const searchUsers = async (
+    query,
+    page = 1,
+    limit = 10
+) => {
+    const params = new URLSearchParams({
+        query,
+        page: String(page),
+        limit: String(limit),
+    });
+
+    const response = await fetch(
+        `${API_BASE_URL}/users/search?${params.toString()}`,
+        {
+            method: "GET",
+            credentials: "include",
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+            "Failed to search users"
+        );
+    }
+
+    return data;
+};

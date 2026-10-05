@@ -6,13 +6,10 @@ import { uploadImage, deleteImage } from "./cloudinary.service.js";
 import { generateProtectedLocation } from "../utils/location.utils.js";
 import { isUserOnline } from "../socket/presence.js";
 
-
 export const CURRENT_PROFILE_VERSION = 1;
 
 /*
- * ============================================================
  * PROFILE COMPLETION REQUIREMENTS
- * ============================================================
  */
 
 const hasRequiredProfileInformation = (user) => {
@@ -30,9 +27,7 @@ const hasRequiredProfileInformation = (user) => {
 };
 
 /*
- * ============================================================
  * CONNECTION PAIR KEY
- * ============================================================
  */
 
 const generatePairKey = (userId1, userId2) => {
@@ -66,9 +61,7 @@ export const updateProfile = async (userId, updateData) => {
     const updates = {};
 
     /*
-     * --------------------------------------------------------
      * BASIC PROFILE FIELDS
-     * --------------------------------------------------------
      */
 
     for (const field of [
@@ -83,9 +76,7 @@ export const updateProfile = async (userId, updateData) => {
     }
 
     /*
-     * --------------------------------------------------------
      * PROFESSIONAL DETAILS
-     * --------------------------------------------------------
      */
 
     if (updateData.professional !== undefined) {
@@ -106,9 +97,7 @@ export const updateProfile = async (userId, updateData) => {
     }
 
     /*
-     * --------------------------------------------------------
      * LEARNING DETAILS
-     * --------------------------------------------------------
      */
 
     if (updateData.learning !== undefined) {
@@ -127,9 +116,7 @@ export const updateProfile = async (userId, updateData) => {
     }
 
     /*
-     * --------------------------------------------------------
      * FETCH CURRENT USER
-     * --------------------------------------------------------
      */
 
     const existingUser = await User.findById(userId);
@@ -142,9 +129,7 @@ export const updateProfile = async (userId, updateData) => {
     }
 
     /*
-     * --------------------------------------------------------
      * DETERMINE THE RESULTING PROFILE STATE
-     * --------------------------------------------------------
      */
 
     const resultingName =
@@ -166,9 +151,7 @@ export const updateProfile = async (userId, updateData) => {
         });
 
     /*
-     * --------------------------------------------------------
      * PROFILE VERSION STATE
-     * --------------------------------------------------------
      */
 
     if (profileIsComplete) {
@@ -181,9 +164,7 @@ export const updateProfile = async (userId, updateData) => {
     }
 
     /*
-     * --------------------------------------------------------
      * SAVE PROFILE
-     * --------------------------------------------------------
      */
 
     const user = await User.findByIdAndUpdate(
@@ -708,6 +689,111 @@ export const discoverUsers = async (
         userId,
         users
     );
+};
+
+/**
+ * Search users by name, bio, interests, professional details, and learning details.
+ */
+export const searchUsers = async (
+    userId,
+    query,
+    page = 1,
+    limit = 10
+) => {
+    const normalizedQuery = query.trim();
+
+    if (!normalizedQuery) {
+        return {
+            users: [],
+            pagination: {
+                page,
+                limit,
+                total: 0,
+                totalPages: 0,
+            },
+        };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const searchRegex = new RegExp(
+        normalizedQuery.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+        ),
+        "i"
+    );
+
+    const searchFilter = {
+        _id: {
+            $ne: userId,
+        },
+
+        isDiscoverable: {
+            $ne: false,
+        },
+
+        $or: [
+            {
+                name: searchRegex,
+            },
+            {
+                bio: searchRegex,
+            },
+            {
+                interests: searchRegex,
+            },
+            {
+                "professional.role": searchRegex,
+            },
+            {
+                "professional.company": searchRegex,
+            },
+            {
+                "professional.skills": searchRegex,
+            },
+            {
+                "professional.industry": searchRegex,
+            },
+            {
+                "learning.subjects": searchRegex,
+            },
+            {
+                "learning.learningGoal": searchRegex,
+            },
+        ],
+    };
+
+    const [users, total] = await Promise.all([
+        User.find(searchFilter)
+            .select(
+                "name gender profilePic bio interests discoveryPreferences professional learning"
+            )
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+
+        User.countDocuments(searchFilter),
+    ]);
+
+    const usersWithConnectionStatus =
+        await addConnectionStatus(
+            userId,
+            users
+        );
+
+    return {
+        users: usersWithConnectionStatus,
+
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(
+                total / limit
+            ),
+        },
+    };
 };
 
 /**

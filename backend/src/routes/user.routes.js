@@ -8,13 +8,20 @@ import {
     removeUserProfileImage, 
     updateUserLocation,
     nearbyUsers,
-    discoverUsersController
+    discoverUsersController,
+    searchUsersController
 } from "../controllers/user.controller.js";
 
 import { verifyJWT } from "../middleware/auth.middleware.js";
 import validate, { validateQuery } from "../middleware/validation.middleware.js";
 import upload from "../middleware/upload.middleware.js";
-import { updateProfileSchema, updateLocationSchema, nearbyUsersSchema, discoverUsersSchema } from "../validations/user.validation.js";
+import { 
+    updateProfileSchema, 
+    updateLocationSchema, 
+    nearbyUsersSchema, 
+    discoverUsersSchema, 
+    searchUserSchema 
+} from "../validations/user.validation.js";
 
 const router = Router();
 
@@ -25,6 +32,7 @@ router.delete("/profile/image", verifyJWT, removeUserProfileImage);
 router.patch("/location", verifyJWT, validate(updateLocationSchema), updateUserLocation);
 router.get("/nearby", verifyJWT, validateQuery(nearbyUsersSchema), nearbyUsers);
 router.get("/discover", verifyJWT, validateQuery(discoverUsersSchema), discoverUsersController);
+router.get("/search", verifyJWT, validateQuery(searchUserSchema), searchUsersController);
 router.get("/:userId/presence", verifyJWT, getUserPresenceController);
 router.get("/:userId", verifyJWT, getUserProfile);
 

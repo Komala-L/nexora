@@ -98,6 +98,10 @@ const App = () => {
                             element={<Profile />}
                         />
 
+                        <Route
+                            path="/profile/:userId"
+                            element={<Profile />}
+                        />
                     </Route>
                 </Route>
             </Route>
