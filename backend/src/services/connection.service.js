@@ -7,6 +7,8 @@ import {
     createNotification,
 } from "./notification.service.js";
 
+import { getIO } from "../socket/socket.js";
+
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 
@@ -85,7 +87,6 @@ export const sendConnectionRequest = async (
         pairKey,
     });
 
-   
     if (!existingConnection) {
         try {
             const connection = await Connection.create({
@@ -102,17 +103,31 @@ export const sendConnectionRequest = async (
                 connection: connection._id,
             });
 
+            getIO()
+                .to(`user:${recipientId.toString()}`)
+                .emit(
+                    "connection-request-received",
+                    {
+                        connectionId:
+                            connection._id.toString(),
+
+                        requesterId:
+                            requesterId.toString(),
+
+                        recipientId:
+                            recipientId.toString(),
+                    }
+                );
+
             return {
                 connection,
                 action: "request_sent",
             };
-  
         } catch (error) {
             handleDuplicateConnectionError(error);
         }
     }
 
-    
     if (existingConnection.status === "accepted") {
         throw new ApiError(
             409,
@@ -120,7 +135,6 @@ export const sendConnectionRequest = async (
         );
     }
 
-    
     if (
         existingConnection.requester.toString() ===
         requesterId.toString()
@@ -131,9 +145,8 @@ export const sendConnectionRequest = async (
         );
     }
 
-  
-  if (
-    existingConnection.recipient.toString() ===
+    if (
+        existingConnection.recipient.toString() ===
         requesterId.toString()
     ) {
         existingConnection.status = "accepted";
@@ -146,6 +159,33 @@ export const sendConnectionRequest = async (
             type: "connection_accepted",
             connection: existingConnection._id,
         });
+
+        getIO()
+            .to(
+                `user:${existingConnection.requester.toString()}`
+            )
+            .emit(
+                "connection-request-accepted",
+                {
+                    connectionId:
+                        existingConnection._id.toString(),
+
+                    acceptedBy:
+                        requesterId.toString(),
+                }
+            );
+
+        getIO()
+            .to(`user:${requesterId.toString()}`)
+            .emit(
+                "connection-request-removed",
+                {
+                    connectionId:
+                        existingConnection._id.toString(),
+
+                    reason: "accepted",
+                }
+            );
 
         return {
             connection: existingConnection,
@@ -205,6 +245,31 @@ export const acceptConnectionRequest = async (
         connection: connection._id,
     });
 
+    getIO()
+        .to(`user:${connection.requester.toString()}`)
+        .emit(
+            "connection-request-accepted",
+            {
+                connectionId:
+                    connection._id.toString(),
+
+                acceptedBy:
+                    userId.toString(),
+            }
+        );
+
+    getIO()
+        .to(`user:${userId.toString()}`)
+        .emit(
+            "connection-request-removed",
+            {
+                connectionId:
+                    connection._id.toString(),
+
+                reason: "accepted",
+            }
+        );
+
     return connection;
 };
 
@@ -241,6 +306,30 @@ export const rejectConnectionRequest = async (
     }
 
     await connection.deleteOne();
+
+    getIO()
+        .to(`user:${userId.toString()}`)
+        .emit(
+            "connection-request-removed",
+            {
+                connectionId:
+                    connection._id.toString(),
+
+                reason: "rejected",
+            }
+        );
+
+    getIO()
+        .to(`user:${connection.requester.toString()}`)
+        .emit(
+            "connection-request-removed",
+            {
+                connectionId:
+                    connection._id.toString(),
+
+                reason: "rejected",
+            }
+        );
 
     return {
         connectionId: connection._id,
@@ -281,6 +370,30 @@ export const cancelConnectionRequest = async (
     }
 
     await connection.deleteOne();
+
+    getIO()
+        .to(`user:${userId.toString()}`)
+        .emit(
+            "connection-request-removed",
+            {
+                connectionId:
+                    connection._id.toString(),
+
+                reason: "cancelled",
+            }
+        );
+
+    getIO()
+        .to(`user:${connection.recipient.toString()}`)
+        .emit(
+            "connection-request-removed",
+            {
+                connectionId:
+                    connection._id.toString(),
+
+                reason: "cancelled",
+            }
+        );
 
     return {
         connectionId: connection._id,
@@ -329,6 +442,16 @@ export const getReceivedConnectionRequests = async (
     };
 };
 
+export const getReceivedConnectionRequestCount = async (userId) => {
+    const count = await Connection.countDocuments({
+        recipient: userId,
+        status: "pending",
+    });
+
+    return {
+        count,
+    };
+};
 
 export const getSentConnectionRequests = async (
     userId,
