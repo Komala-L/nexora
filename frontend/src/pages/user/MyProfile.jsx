@@ -51,9 +51,7 @@ const MyProfile = () => {
         fetchProfile();
     }, []);
 
-    /* -------------------------------------------------
-       PROFILE COMPLETION
-    ------------------------------------------------- */
+    /* ------------ PROFILE COMPLETION ------------- */
 
     const profileCompletion = useMemo(() => {
         if (!user) {

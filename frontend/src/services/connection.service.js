@@ -179,3 +179,24 @@ export const removeConnection = async (
 
     return data;
 };
+
+export const getReceivedConnectionRequestCount = async () => {
+    const response = await fetch(
+        `${API_BASE_URL}/connections/requests/received/count`,
+        {
+            method: "GET",
+            credentials: "include",
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+                "Failed to fetch connection request count"
+        );
+    }
+
+    return data;
+};

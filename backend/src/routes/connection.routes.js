@@ -15,6 +15,7 @@ import {
     getMyConnections,
     getReceivedRequests,
     getSentRequests,
+    getReceivedRequestCount,
 } from "../controllers/connection.controller.js";
 
 const router = Router();
@@ -55,7 +56,13 @@ router.get("/requests/received",verifyJWT,validateQuery(getConnectionsQuerySchem
 router.get("/requests/sent",verifyJWT,validateQuery(getConnectionsQuerySchema),getSentRequests);
 
 /**
+ * Get the number of pending connection requests received by the authenticated user.
+ */
+router.get("/requests/received/count",verifyJWT,getReceivedRequestCount);
+
+/**
  * Remove an existing accepted connection.
  */
 router.delete("/:connectionId",verifyJWT,validateParams(connectionIdSchema),removeConnectionController);
+
 export default router;

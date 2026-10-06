@@ -1,5 +1,5 @@
+import { useEffect, useState } from "react";
 import {
-    Bell,
     Compass,
     Home,
     MessageCircle,
@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { getReceivedConnectionRequestCount } from "../../services/connection.service.js";
+import { socket } from "../../socket/socket";
 
 const navigationItems = [
     {
@@ -36,7 +38,6 @@ const navigationItems = [
         label: "Requests",
         path: "/requests",
         icon: UserPlus,
-        badge: 3,
     },
     {
         label: "Profile",
@@ -51,10 +52,87 @@ const navigationItems = [
 ];
 
 const Sidebar = () => {
-    const { user } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
 
+    const [requestCount, setRequestCount] = useState(0);
     const userName = user?.name || "User";
     const userInitial = userName.charAt(0).toUpperCase();
+
+    useEffect(() => {
+        if (authLoading || !user) {
+            return;
+        }
+
+        const fetchRequestCount = async () => {
+            try {
+                const data =
+                    await getReceivedConnectionRequestCount();
+
+                setRequestCount(
+                    data.data?.count || 0
+                );
+            } catch (error) {
+                console.error(
+                    "Failed to fetch connection request count:",
+                    error
+                );
+            }
+        };
+
+        fetchRequestCount();
+    }, [authLoading, user]);
+
+    useEffect(() => {
+        if (authLoading || !user) {
+            return;
+        }
+
+        const refreshRequestCount = async () => {
+            try {
+                const data =
+                    await getReceivedConnectionRequestCount();
+
+                setRequestCount(
+                    data.data?.count || 0
+                );
+            } catch (error) {
+                console.error(
+                    "Failed to refresh connection request count:",
+                    error
+                );
+            }
+        };
+
+        const handleRequestReceived = () => {
+            refreshRequestCount();
+        };
+
+        const handleRequestRemoved = () => {
+            refreshRequestCount();
+        };
+
+        socket.on(
+            "connection-request-received",
+            handleRequestReceived
+        );
+
+        socket.on(
+            "connection-request-removed",
+            handleRequestRemoved
+        );
+
+        return () => {
+            socket.off(
+                "connection-request-received",
+                handleRequestReceived
+            );
+
+            socket.off(
+                "connection-request-removed",
+                handleRequestRemoved
+            );
+        };
+    }, [authLoading, user]);
 
     return (
         <aside className="hidden w-60 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
@@ -95,11 +173,12 @@ const Sidebar = () => {
                                     {item.label}
                                 </span>
 
-                                {item.badge && (
-                                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-100 px-1.5 text-xs font-semibold text-indigo-700">
-                                        {item.badge}
-                                    </span>
-                                )}
+                                {item.label === "Requests" &&
+                                    requestCount > 0 && (
+                                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-100 px-1.5 text-xs font-semibold text-indigo-700">
+                                            {requestCount}
+                                        </span>
+                                    )}
                             </NavLink>
                         );
                     })}

@@ -49,9 +49,46 @@ export const AuthProvider = ({ children }) => {
             });
         };
 
+        const handleConnectionRequestReceived = (
+            data
+        ) => {
+            window.dispatchEvent(
+                new CustomEvent(
+                    "nexora:connection-request-received",
+                    {
+                        detail: data,
+                    }
+                )
+            );
+        };
+
+
+        const handleConnectionRequestRemoved = (
+            data
+        ) => {
+            window.dispatchEvent(
+                new CustomEvent(
+                    "nexora:connection-request-removed",
+                    {
+                        detail: data,
+                    }
+                )
+            );
+        };
+
         socket.on(
             "new-message",
             handleNewMessage
+        );
+
+        socket.on(
+            "connection-request-received",
+            handleConnectionRequestReceived
+        );
+
+        socket.on(
+            "connection-request-removed",
+            handleConnectionRequestRemoved
         );
 
         if (!socket.connected) {
@@ -63,8 +100,19 @@ export const AuthProvider = ({ children }) => {
                 "new-message",
                 handleNewMessage
             );
+
+            socket.off(
+                "connection-request-received",
+                handleConnectionRequestReceived
+            );
+
+            socket.off(
+                "connection-request-removed",
+                handleConnectionRequestRemoved
+            );
         };
     }, [user, isLoading]);
+
 
     const logout = async () => {
         try {
@@ -74,6 +122,7 @@ export const AuthProvider = ({ children }) => {
             setUser(null);
         }
     };
+
 
     return (
         <AuthContext.Provider
@@ -90,6 +139,7 @@ export const AuthProvider = ({ children }) => {
         </AuthContext.Provider>
     );
 };
+
 
 export const useAuth = () => {
     return useContext(AuthContext);

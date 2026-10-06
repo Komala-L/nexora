@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { socket } from "../../socket/socket";
 import {
     Inbox,
     Send,
@@ -65,6 +66,73 @@ const Requests = () => {
 
     useEffect(() => {
         fetchRequests();
+    }, []);
+
+    useEffect(() => {
+        const handleConnectionRequestReceived = () => {
+            fetchRequests();
+        };
+
+        const handleConnectionRequestRemoved = ({
+            connectionId,
+        }) => {
+            setReceivedRequests((current) =>
+                current.filter(
+                    (request) =>
+                        request._id !== connectionId
+                )
+            );
+
+            setSentRequests((current) =>
+                current.filter(
+                    (request) =>
+                        request._id !== connectionId
+                )
+            );
+        };
+
+        const handleConnectionRequestAccepted = ({
+            connectionId,
+        }) => {
+            setSentRequests((current) =>
+                current.filter(
+                    (request) =>
+                        request._id !== connectionId
+                )
+            );
+        };
+
+        socket.on(
+            "connection-request-received",
+            handleConnectionRequestReceived
+        );
+
+        socket.on(
+            "connection-request-removed",
+            handleConnectionRequestRemoved
+        );
+
+        socket.on(
+            "connection-request-accepted",
+            handleConnectionRequestAccepted
+        );
+
+        return () => {
+            socket.off(
+                "connection-request-received",
+                handleConnectionRequestReceived
+            );
+
+            socket.off(
+                "connection-request-removed",
+                handleConnectionRequestRemoved
+            );
+
+            socket.off(
+                "connection-request-accepted",
+                handleConnectionRequestAccepted
+            );
+        };
     }, []);
 
     useEffect(() => {
