@@ -239,3 +239,30 @@ export const searchUsers = async (
 
     return data;
 };
+
+export const reportUser = async (userId, reason, description = "") => {
+    const response = await fetch(
+        `${API_BASE_URL}/users/${userId}/report`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                reason,
+                description,
+            }),
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message || "Failed to submit report"
+        );
+    }
+
+    return data;
+};

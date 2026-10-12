@@ -88,17 +88,14 @@ const userSchema = new mongoose.Schema({
             type: Boolean,
             default: true,
         },
-
         connectionAccepted: {
             type: Boolean,
             default: true,
         },
-
         connectionRejected: {
             type: Boolean,
             default: true,
         },
-
         messages: {
             type: Boolean,
             default: true,
@@ -110,13 +107,11 @@ const userSchema = new mongoose.Schema({
             maxlength: 80,
             trim: true,
         },
-
         company: {
             type: String,
             maxlength: 100,
             trim: true,
         },
-
         skills: {
             type: [String],
             validate: {
@@ -126,7 +121,6 @@ const userSchema = new mongoose.Schema({
                 message: "A user can have a maximum of 15 skills.",
             },
         },
-
         industry: {
             type: String,
             maxlength: 80,
@@ -143,7 +137,6 @@ const userSchema = new mongoose.Schema({
                 message: "A user can have a maximum of 10 learning subjects.",
             },
         },
-
         learningGoal: {
             type: String,
             maxlength: 150,
@@ -192,6 +185,68 @@ const userSchema = new mongoose.Schema({
             },
         },
     },
+    accountStatus: {
+        type: String,
+        enum: ["active", "suspended", "banned"],
+        default: "active",
+        index: true,
+    },
+    warningCount: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    confirmedViolationCount: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    suspensionExpiresAt: {
+        type: Date,
+        default: null,
+    },
+    moderationHistory: [
+        {
+            action: {
+                type: String,
+                enum: [
+                    "warning",
+                    "final_warning",
+                    "temporary_suspension",
+                    "permanent_ban",
+                    "suspension_expired",
+                ],
+                required: true,
+            },
+            reason: {
+                type: String,
+                required: true,
+                maxlength: 1000,
+            },
+            report: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Report",
+                default: null,
+            },
+            admin: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Admin",
+                default: null,
+            },
+            createdAt: {
+                type: Date,
+                default: Date.now,
+            },
+            expiresAt: {
+                type: Date,
+                default: null,
+            },
+            acknowledgedAt: {
+                type: Date,
+                default: null,
+            },
+        },
+    ],
     refreshToken: {
         type: String,
         default: null,

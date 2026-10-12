@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -17,6 +17,16 @@ import Messages from "./pages/user/Messages";
 import Chat from "./pages/user/Chat";
 import Notifications from "./pages/user/Notifications";
 import Settings from "./pages/user/Settings";
+
+import { AdminAuthProvider } from "./context/AdminAuthContext";
+import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminReports from "./pages/admin/AdminReports";
+import AdminSettings from "./pages/admin/AdminSettings";
+
+import ModerationNoticeManager from "./components/ModerationNoticeManager";
 
 const App = () => {
     return (
@@ -43,10 +53,58 @@ const App = () => {
                 element={<Login />}
             />
 
+            
+            {/* SHARED ADMIN AUTHENTICATION */}
+            <Route
+                path="/admin"
+                element={
+                    <AdminAuthProvider>
+                        <Outlet />
+                    </AdminAuthProvider>
+                }
+            >
+                {/* Public admin login */}
+                <Route
+                    path="login"
+                    element={<AdminLogin />}
+                />
+
+                {/* Protected admin pages */}
+                <Route element={<ProtectedAdminRoute />}>
+                    <Route
+                        index
+                        element={<AdminDashboard />}
+                    />
+
+                    <Route
+                        path="users"
+                        element={<AdminUsers />}
+                    />
+
+                     <Route 
+                        path="reports" 
+                        element={<AdminReports />} 
+                    />
+
+                    <Route 
+                        path="settings" 
+                        element={<AdminSettings />} 
+                    />
+                </Route>
+            </Route>
+
+
             {/* PROTECTED ROUTES */}
             <Route element={<ProtectedRoute />}>
                 <Route element={<ProfileCompletionGate />}>
-                    <Route element={<AppLayout />}>
+                    <Route
+                        element={
+                            <>
+                                <ModerationNoticeManager />
+                                <AppLayout />
+                            </>
+                        }
+                    >
 
                         <Route
                             path="/home"

@@ -3,6 +3,27 @@ import { useAuth } from "../../context/AuthContext";
 import { loginUser } from "../../services/auth.service";
 import { useNavigate } from "react-router-dom";
 
+const getServerErrorTitle = (message) => {
+    const normalizedMessage = message.toLowerCase();
+
+    if (normalizedMessage.includes("permanently banned")) {
+        return "Account Permanently Banned";
+    }
+
+    if (normalizedMessage.includes("temporarily suspended")) {
+        return "Account Temporarily Suspended";
+    }
+
+    if (
+        normalizedMessage.includes("suspended") ||
+        normalizedMessage.includes("suspension")
+    ) {
+        return "Account Suspended";
+    }
+
+    return "Unable to Log In";
+};
+
 const Login = () => {
     const navigate = useNavigate();
     const { checkAuth } = useAuth();
@@ -100,8 +121,26 @@ const Login = () => {
                     >
 
                     {serverError && (
-                        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                            {serverError}
+                        <div
+                            role="alert"
+                            aria-live="polite"
+                            className="rounded-xl border border-red-500/40 bg-red-950/60 p-4 text-red-100 shadow-sm"
+                        >
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-500/15">
+                                    <span className="text-lg" aria-hidden="true">⚠️</span>
+                                </div>
+
+                                <div className="min-w-0">
+                                    <h2 className="text-sm font-semibold text-red-200">
+                                        {getServerErrorTitle(serverError)}
+                                    </h2>
+
+                                    <p className="mt-1 break-words text-sm leading-6 text-red-100">
+                                        {serverError}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     )}
 

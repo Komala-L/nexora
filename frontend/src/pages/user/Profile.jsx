@@ -9,9 +9,13 @@ import {
     Users,
     Sparkles,
     ShieldCheck,
+    Flag,
+    X,
+    Send,
+    CheckCircle2,
 } from "lucide-react";
 
-import { getUserProfile } from "../../services/user.service";
+import { getUserProfile, reportUser } from "../../services/user.service";
 import {
     sendConnectionRequest,
     acceptConnectionRequest,
@@ -27,6 +31,13 @@ const Profile = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
     const [isConnecting, setIsConnecting] = useState(false);
+
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportReason, setReportReason] = useState("");
+    const [reportDescription, setReportDescription] = useState("");
+    const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+    const [reportError, setReportError] = useState("");
+    const [reportSuccess, setReportSuccess] = useState("");
 
     const fetchProfile = async () => {
         try {
@@ -189,6 +200,39 @@ const Profile = () => {
         }
     };
     
+    const handleReportSubmit = async (event) => {
+        event.preventDefault();
+
+        if (!reportReason) {
+            setReportError("Please select a reason for reporting.");
+            return;
+        }
+
+        try {
+            setIsSubmittingReport(true);
+            setReportError("");
+
+            await reportUser(
+                userId,
+                reportReason,
+                reportDescription.trim()
+            );
+
+            setShowReportModal(false);
+            setReportReason("");
+            setReportDescription("");
+            setReportSuccess(
+                "Your report has been submitted. Thank you for helping keep Nexora safe."
+            );
+        } catch (error) {
+            setReportError(
+                error.message || "Failed to submit your report."
+            );
+        } finally {
+            setIsSubmittingReport(false);
+        }
+    };
+
     useEffect(() => {
         if (userId) {
             fetchProfile();
@@ -451,9 +495,18 @@ const Profile = () => {
                             </div>
                         </div>
 
-                        <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700">
-                            <ShieldCheck size={17} />
-                            Connected safely
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setReportError("");
+                                    setShowReportModal(true);
+                                }}
+                                className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+                            >
+                                <Flag size={16} />
+                                Report User
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -651,6 +704,188 @@ const Profile = () => {
                     </div>
                 </div>
             </section>
+            
+            {/* REPORT SUCCESS */}
+            {reportSuccess && (
+                <div
+                    role="status"
+                    className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+                >
+                    <CheckCircle2 size={20} className="mt-0.5 shrink-0" />
+                    <p>{reportSuccess}</p>
+                    <button
+                        type="button"
+                        onClick={() => setReportSuccess("")}
+                        className="ml-auto rounded-lg p-1 hover:bg-emerald-100"
+                        aria-label="Dismiss notification"
+                    >
+                        <X size={16} />
+                    </button>
+                </div>
+            )}
+
+            {/* REPORT MODAL */}
+            {showReportModal && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/50 p-4 backdrop-blur-sm"
+                    onMouseDown={(event) => {
+                        if (
+                            event.target === event.currentTarget &&
+                            !isSubmittingReport
+                        ) {
+                            setShowReportModal(false);
+                            setReportError("");
+                        }
+                    }}
+                >
+                    <section
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="report-modal-title"
+                        className="my-auto w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8"
+                    >
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                                    <Flag size={22} />
+                                </div>
+
+                                <div>
+                                    <h2
+                                        id="report-modal-title"
+                                        className="text-xl font-bold text-slate-900"
+                                    >
+                                        Report {user.name}
+                                    </h2>
+
+                                    <p className="mt-1 text-sm leading-6 text-slate-500">
+                                        Tell us what happened. Our team can review your report.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                disabled={isSubmittingReport}
+                                onClick={() => {
+                                    setShowReportModal(false);
+                                    setReportError("");
+                                }}
+                                className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+                                aria-label="Close report dialog"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form
+                            onSubmit={handleReportSubmit}
+                            className="mt-7 space-y-5"
+                        >
+                            <div>
+                                <label
+                                    htmlFor="report-reason"
+                                    className="mb-2 block text-sm font-semibold text-slate-700"
+                                >
+                                    Reason for reporting
+                                    <span className="text-rose-500"> *</span>
+                                </label>
+
+                                <select
+                                    id="report-reason"
+                                    required
+                                    value={reportReason}
+                                    onChange={(event) => {
+                                        setReportReason(event.target.value);
+                                        setReportError("");
+                                    }}
+                                    disabled={isSubmittingReport}
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 disabled:bg-slate-50"
+                                >
+                                    <option value="">Select a reason</option>
+                                    <option value="harassment">Harassment or bullying</option>
+                                    <option value="spam">Spam</option>
+                                    <option value="fake_profile">Fake profile or impersonation</option>
+                                    <option value="inappropriate_content">Inappropriate content</option>
+                                    <option value="scam">Scam or fraud</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label
+                                    htmlFor="report-description"
+                                    className="mb-2 block text-sm font-semibold text-slate-700"
+                                >
+                                    Additional details
+                                    <span className="ml-1 font-normal text-slate-400">
+                                        (Optional)
+                                    </span>
+                                </label>
+
+                                <textarea
+                                    id="report-description"
+                                    rows={4}
+                                    maxLength={1000}
+                                    value={reportDescription}
+                                    onChange={(event) =>
+                                        setReportDescription(event.target.value)
+                                    }
+                                    disabled={isSubmittingReport}
+                                    placeholder="Share any details that may help us review this report..."
+                                    className="w-full resize-y rounded-xl border border-slate-200 px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 disabled:bg-slate-50"
+                                />
+
+                                <p className="mt-1.5 text-right text-xs text-slate-400">
+                                    {reportDescription.length}/1000 characters
+                                </p>
+                            </div>
+
+                            {reportError && (
+                                <div
+                                    role="alert"
+                                    className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"
+                                >
+                                    <AlertCircle size={17} className="mt-0.5 shrink-0" />
+                                    <p>{reportError}</p>
+                                </div>
+                            )}
+
+                            <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-end">
+                                <button
+                                    type="button"
+                                    disabled={isSubmittingReport}
+                                    onClick={() => {
+                                        setShowReportModal(false);
+                                        setReportError("");
+                                    }}
+                                    className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    disabled={isSubmittingReport || !reportReason}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {isSubmittingReport ? (
+                                        <>
+                                            <RefreshCw size={16} className="animate-spin" />
+                                            Submitting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send size={16} />
+                                            Submit Report
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            )}
         </div>
     );
 };
