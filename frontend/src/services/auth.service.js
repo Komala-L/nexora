@@ -60,9 +60,12 @@ export const getCurrentUser = async () => {
     const data = await response.json();
 
     if (!response.ok) {
-        throw new Error(
+        const error = new Error(
             data.message || "Failed to fetch current user"
         );
+
+        error.status = response.status;
+        throw error;
     }
 
     return data;

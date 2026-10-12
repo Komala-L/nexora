@@ -11,28 +11,46 @@ import {
 } from "../services/auth.service";
 
 import { socket } from "../socket/socket";
+import { useLocation } from "react-router-dom";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+    const { pathname } = useLocation();
+    const isAdminRoute = pathname.startsWith("/admin");
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const checkAuth = async () => {
         try {
             const response = await getCurrentUser();
-
             setUser(response.data.user);
+            return response.data.user;
         } catch (error) {
             setUser(null);
+
+            if (error.status !== 401) {
+                console.error(
+                    "Unable to check user authentication:",
+                    error.message
+                );
+            }
+
+            return null;
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
+        if (isAdminRoute) {
+            setUser(null);
+            setIsLoading(false);
+            return;
+        }
+
         checkAuth();
-    }, []);
+    }, [isAdminRoute]);
 
     useEffect(() => {
         if (isLoading || !user) {
@@ -61,7 +79,6 @@ export const AuthProvider = ({ children }) => {
                 )
             );
         };
-
 
         const handleConnectionRequestRemoved = (
             data
@@ -123,7 +140,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-
     return (
         <AuthContext.Provider
             value={{
@@ -139,7 +155,6 @@ export const AuthProvider = ({ children }) => {
         </AuthContext.Provider>
     );
 };
-
 
 export const useAuth = () => {
     return useContext(AuthContext);
