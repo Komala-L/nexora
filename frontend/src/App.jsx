@@ -28,6 +28,8 @@ import AdminSettings from "./pages/admin/AdminSettings";
 
 import ModerationNoticeManager from "./components/ModerationNoticeManager";
 
+import LandingPage from "./pages/public/LandinfPage";
+
 const App = () => {
     return (
         <Routes>
@@ -35,12 +37,7 @@ const App = () => {
 
             <Route
                 path="/"
-                element={
-                    <Navigate
-                        to="/register"
-                        replace
-                    />
-                }
+                element={<LandingPage />}
             />
 
             <Route
