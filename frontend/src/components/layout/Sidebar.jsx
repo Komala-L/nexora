@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import {
     Compass,
     Home,
+    LogOut,
     MessageCircle,
     Settings,
     User,
     UserPlus,
     Users,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getReceivedConnectionRequestCount } from "../../services/connection.service.js";
 import { socket } from "../../socket/socket";
@@ -52,7 +53,24 @@ const navigationItems = [
 ];
 
 const Sidebar = () => {
-    const { user, isLoading: authLoading } = useAuth();
+    const { user, isLoading: authLoading, logout } = useAuth();
+    const navigate = useNavigate();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async () => {
+        if (isLoggingOut) return;
+
+        setIsLoggingOut(true);
+
+        try {
+            await logout();
+            navigate("/login", { replace: true });
+        } catch (error) {
+            console.error("Failed to log out:", error);
+        } finally {
+            setIsLoggingOut(false);
+        }
+    };
 
     const [requestCount, setRequestCount] = useState(0);
     const userName = user?.name || "User";
@@ -184,11 +202,14 @@ const Sidebar = () => {
                     })}
                 </div>
             </nav>
-
-            {/* User Mini Profile */}
+            
+            {/* User Mini Profile and Logout */}
             <div className="border-t border-slate-200 p-4">
-                <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700">
+                <NavLink
+                    to="/profile"
+                    className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 transition hover:bg-slate-100"
+                >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700">
                         {userInitial}
                     </div>
 
@@ -201,8 +222,22 @@ const Sidebar = () => {
                             View profile
                         </p>
                     </div>
-                </div>
+                </NavLink>
+
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="mt-3 flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    <LogOut size={18} strokeWidth={2} />
+
+                    <span>
+                        {isLoggingOut ? "Logging out..." : "Logout"}
+                    </span>
+                </button>
             </div>
+
         </aside>
     );
 };

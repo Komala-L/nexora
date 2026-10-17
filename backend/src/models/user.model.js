@@ -65,7 +65,7 @@ const userSchema = new mongoose.Schema({
     discoveryPreferences: {
         type: [String],
         enum: ["friends", "professional", "learning"],
-        default: ["friends"],
+        default: [],
     },
     profileCompleted: {
         type: Boolean,

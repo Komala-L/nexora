@@ -41,6 +41,61 @@ const reportSchema = new mongoose.Schema(
             maxlength: 1000,
             default: "",
         },
+        
+        evidence: {
+            type: [
+                {
+                    publicId: {
+                        type: String,
+                        required: true,
+                    },
+                    resourceType: {
+                        type: String,
+                        enum: ["image"],
+                        default: "image",
+                    },
+                    mimeType: {
+                        type: String,
+                        enum: [
+                            "image/jpeg",
+                            "image/png",
+                            "image/webp",
+                        ],
+                        required: true,
+                    },
+                    format: {
+                        type: String,
+                        default: "",
+                    },
+                    bytes: {
+                        type: Number,
+                        min: 0,
+                    },
+                    width: {
+                        type: Number,
+                        min: 0,
+                    },
+                    height: {
+                        type: Number,
+                        min: 0,
+                    },
+                },
+            ],
+            default: undefined,
+            required: true,
+            validate: [
+                {
+                    validator: (items) =>
+                        Array.isArray(items) && items.length >= 1,
+                    message: "At least one evidence image is required.",
+                },
+                {
+                    validator: (items) =>
+                        Array.isArray(items) && items.length <= 3,
+                    message: "A report can contain at most 3 evidence images.",
+                },
+            ],
+        },
 
         status: {
             type: String,

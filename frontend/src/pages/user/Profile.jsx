@@ -13,6 +13,7 @@ import {
     X,
     Send,
     CheckCircle2,
+    ImagePlus,
 } from "lucide-react";
 
 import { getUserProfile, reportUser } from "../../services/user.service";
@@ -38,6 +39,9 @@ const Profile = () => {
     const [isSubmittingReport, setIsSubmittingReport] = useState(false);
     const [reportError, setReportError] = useState("");
     const [reportSuccess, setReportSuccess] = useState("");
+
+    const [reportEvidence, setReportEvidence] = useState([]);
+    const [evidencePreviews, setEvidencePreviews] = useState([]);
 
     const fetchProfile = async () => {
         try {
@@ -199,12 +203,93 @@ const Profile = () => {
             setIsConnecting(false);
         }
     };
-    
+
+    const handleEvidenceChange = (event) => {
+        const selectedFiles = Array.from(
+            event.target.files || []
+        );
+
+        event.target.value = "";
+
+        if (selectedFiles.length === 0) return;
+
+        setReportError("");
+
+        const validTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+        ];
+
+        const validFiles = [];
+
+        for (const file of selectedFiles) {
+            if (!validTypes.includes(file.type)) {
+                setReportError(
+                    "Only JPEG, PNG, and WebP screenshots are allowed."
+                );
+                continue;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                setReportError(
+                    "Each screenshot must be 5 MB or smaller."
+                );
+                continue;
+            }
+
+            validFiles.push(file);
+        }
+
+        const availableSlots = 3 - reportEvidence.length;
+
+        if (validFiles.length > availableSlots) {
+            setReportError(
+                "You can attach a maximum of 3 screenshots."
+            );
+        }
+
+        const acceptedFiles = validFiles.slice(
+            0,
+            Math.max(0, availableSlots)
+        );
+
+        setReportEvidence((currentFiles) => [
+            ...currentFiles,
+            ...acceptedFiles,
+        ]);
+    };
+
+    const removeReportEvidence = (indexToRemove) => {
+        setReportEvidence((currentFiles) =>
+            currentFiles.filter((_, index) => index !== indexToRemove)
+        );
+    };
+
+    useEffect(() => {
+        const previewUrls = reportEvidence.map((file) =>
+            URL.createObjectURL(file)
+        );
+
+        setEvidencePreviews(previewUrls);
+
+        return () => {
+            previewUrls.forEach((url) => URL.revokeObjectURL(url));
+        };
+    }, [reportEvidence]);
+
     const handleReportSubmit = async (event) => {
         event.preventDefault();
 
         if (!reportReason) {
             setReportError("Please select a reason for reporting.");
+            return;
+        }
+
+        if (reportEvidence.length === 0) {
+            setReportError(
+                "Please attach at least one screenshot as evidence."
+            );
             return;
         }
 
@@ -215,12 +300,15 @@ const Profile = () => {
             await reportUser(
                 userId,
                 reportReason,
-                reportDescription.trim()
+                reportDescription.trim(),
+                reportEvidence
             );
 
             setShowReportModal(false);
             setReportReason("");
             setReportDescription("");
+            setReportEvidence([]);
+            setReportError("");
             setReportSuccess(
                 "Your report has been submitted. Thank you for helping keep Nexora safe."
             );
@@ -841,6 +929,93 @@ const Profile = () => {
                                 </p>
                             </div>
 
+                            
+                            {/* REQUIRED REPORT EVIDENCE */}
+                            <div>
+                                <div className="mb-2 flex items-center justify-between gap-3">
+                                    <label className="block text-sm font-semibold text-slate-700">
+                                        Screenshots as evidence
+                                        <span className="ml-1 text-rose-500">*</span>
+                                    </label>
+
+                                    <span className="text-xs font-medium text-slate-400">
+                                        {reportEvidence.length}/3 selected
+                                    </span>
+                                </div>
+
+                                <p className="mb-3 text-xs leading-5 text-slate-500">
+                                    Attach at least one screenshot to support your report.
+                                    JPEG, PNG, or WebP · Maximum 5 MB per image.
+                                </p>
+
+                                <input
+                                    id="report-evidence"
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    multiple
+                                    hidden
+                                    onChange={handleEvidenceChange}
+                                    disabled={
+                                        isSubmittingReport ||
+                                        reportEvidence.length >= 3
+                                    }
+                                />
+
+                                <label
+                                    htmlFor="report-evidence"
+                                    className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-4 text-sm font-semibold transition ${
+                                        isSubmittingReport ||
+                                        reportEvidence.length >= 3
+                                            ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
+                                            : "border-indigo-200 bg-indigo-50/50 text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50"
+                                    }`}
+                                >
+                                    <ImagePlus size={18} />
+                                    {reportEvidence.length >= 3
+                                        ? "Maximum screenshots selected"
+                                        : "Add screenshots"}
+                                </label>
+
+                                {evidencePreviews.length > 0 && (
+                                    <div className="mt-4 grid grid-cols-3 gap-3">
+                                        {evidencePreviews.map((preview, index) => (
+                                            <div
+                                                key={`${preview}-${index}`}
+                                                className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+                                            >
+                                                <img
+                                                    src={preview}
+                                                    alt={`Report evidence ${index + 1}`}
+                                                    className="h-24 w-full object-cover"
+                                                />
+
+                                                <div className="truncate px-2 py-1.5 text-xs text-slate-500">
+                                                    Screenshot {index + 1}
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        removeReportEvidence(index)
+                                                    }
+                                                    disabled={isSubmittingReport}
+                                                    aria-label={`Remove screenshot ${index + 1}`}
+                                                    className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-lg bg-slate-950/75 text-white transition hover:bg-rose-600 disabled:opacity-50"
+                                                >
+                                                    <X size={15} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {reportEvidence.length === 0 && (
+                                    <p className="mt-2 text-xs font-medium text-rose-600">
+                                        At least one screenshot is required.
+                                    </p>
+                                )}
+                            </div>
+
                             {reportError && (
                                 <div
                                     role="alert"
@@ -866,7 +1041,11 @@ const Profile = () => {
 
                                 <button
                                     type="submit"
-                                    disabled={isSubmittingReport || !reportReason}
+                                    disabled={
+                                        isSubmittingReport ||
+                                        !reportReason ||
+                                        reportEvidence.length === 0
+                                    }
                                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {isSubmittingReport ? (

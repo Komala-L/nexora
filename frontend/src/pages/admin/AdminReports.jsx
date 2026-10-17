@@ -3,6 +3,7 @@ import AdminLayout from "../../components/admin/AdminLayout";
 import {
     getAdminReports,
     updateAdminReport,
+    getAdminReportEvidence,
 } from "../../services/adminReport.service";
 
 const PAGE_SIZE = 10;
@@ -71,6 +72,10 @@ const AdminReports = () => {
     const [adminNotes, setAdminNotes] = useState("");
     const [reloadKey, setReloadKey] = useState(0);
     const [accountAction, setAccountAction] = useState("none");
+    const [evidenceIndex, setEvidenceIndex] = useState(null);
+    const [evidenceImage, setEvidenceImage] = useState(null);
+    const [evidenceLoading, setEvidenceLoading] = useState(false);
+    const [evidenceError, setEvidenceError] = useState("");
 
     useEffect(() => {
         const timer = window.setTimeout(() => {
@@ -179,6 +184,28 @@ const AdminReports = () => {
         }
     };
 
+    const handleViewEvidence = async (report, index) => {
+        setEvidenceIndex(index);   
+        setEvidenceImage(null);
+        setEvidenceError("");
+        setEvidenceLoading(true);
+
+        try {
+            const evidence = await getAdminReportEvidence({
+                reportId: report._id,
+                evidenceIndex: index,
+            });
+
+            setEvidenceImage(evidence);
+        } catch (err) {
+            setEvidenceError(
+                err.message || "Unable to load this evidence image."
+            );
+        } finally {
+            setEvidenceLoading(false);
+        }
+    };
+
     const startIndex = totalReports === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
     const endIndex = Math.min(page * PAGE_SIZE, totalReports);
 
@@ -194,9 +221,7 @@ const AdminReports = () => {
                             <input
                                 type="search"
                                 value={searchInput}
-                                onChange={(event) =>
-                                    setSearchInput(event.target.value)
-                                }
+                                onChange={(event) => setSearchInput(event.target.value)}
                                 placeholder="Search reason, user name, email or notes..."
                                 className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
                             />
@@ -208,16 +233,11 @@ const AdminReports = () => {
                             </span>
                             <select
                                 value={status}
-                                onChange={(event) =>
-                                    handleStatusFilter(event.target.value)
-                                }
+                                onChange={(event) => handleStatusFilter(event.target.value)}
                                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
                             >
                                 {STATUS_OPTIONS.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                    >
+                                    <option key={option.value} value={option.value}>
                                         {option.label}
                                     </option>
                                 ))}
@@ -252,9 +272,7 @@ const AdminReports = () => {
 
                     {loading ? (
                         <div className="space-y-4 p-6" aria-live="polite">
-                            <p className="text-sm text-slate-500">
-                                Loading reports...
-                            </p>
+                            <p className="text-sm text-slate-500">Loading reports...</p>
                             {[1, 2, 3].map((item) => (
                                 <div
                                     key={item}
@@ -271,12 +289,10 @@ const AdminReports = () => {
                             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-2xl text-indigo-600">
                                 ⚑
                             </div>
-                            <h3 className="mt-4 font-semibold">
-                                No reports found
-                            </h3>
+                            <h3 className="mt-4 font-semibold">No reports found</h3>
                             <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-                                There are no reports matching your search and
-                                filters. New user submissions will appear here.
+                                There are no reports matching your search and filters.
+                                New user submissions will appear here.
                             </p>
                         </div>
                     ) : (
@@ -362,9 +378,7 @@ const AdminReports = () => {
                                     <button
                                         type="button"
                                         disabled={page <= 1 || loading}
-                                        onClick={() =>
-                                            setPage((current) => current - 1)
-                                        }
+                                        onClick={() => setPage((current) => current - 1)}
                                         className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40"
                                     >
                                         Previous
@@ -376,14 +390,8 @@ const AdminReports = () => {
 
                                     <button
                                         type="button"
-                                        disabled={
-                                            page >= totalPages ||
-                                            loading ||
-                                            totalPages === 0
-                                        }
-                                        onClick={() =>
-                                            setPage((current) => current + 1)
-                                        }
+                                        disabled={page >= totalPages || loading || totalPages === 0}
+                                        onClick={() => setPage((current) => current + 1)}
                                         className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40"
                                     >
                                         Next
@@ -395,6 +403,70 @@ const AdminReports = () => {
                 </section>
             </div>
 
+            {/* Screenshot evidence viewer */}
+            {evidenceIndex !== null && (
+                <div
+                    className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 p-4"
+                    onMouseDown={(event) => {
+                        if (event.target === event.currentTarget) {
+                            setEvidenceIndex(null);
+                            setEvidenceImage(null);
+                            setEvidenceError("");
+                        }
+                    }}
+                >
+                    <section
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="evidence-viewer-title"
+                        className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+                    >
+                        <div className="flex items-center justify-between border-b border-slate-100 p-4">
+                            <h3 id="evidence-viewer-title" className="font-semibold">
+                                Screenshot {evidenceIndex + 1}
+                            </h3>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setEvidenceIndex(null);
+                                    setEvidenceImage(null);
+                                    setEvidenceError("");
+                                }}
+                                className="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100"
+                                aria-label="Close evidence viewer"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="flex min-h-64 items-center justify-center bg-slate-50 p-4">
+                            {evidenceLoading ? (
+                                <p className="text-sm text-slate-500">
+                                    Loading screenshot...
+                                </p>
+                            ) : evidenceError ? (
+                                <p role="alert" className="text-sm text-red-600">
+                                    {evidenceError}
+                                </p>
+                            ) : evidenceImage?.url ? (
+                                <img
+                                    src={evidenceImage.url}
+                                    alt={`Report evidence ${evidenceIndex + 1}`}
+                                    className="max-h-[70vh] max-w-full rounded-lg object-contain"
+                                    referrerPolicy="no-referrer"
+                                />
+                            ) : (
+                                <p className="text-sm text-slate-500">
+                                    No screenshot available.
+                                </p>
+                            )}
+                        </div>
+                    </section>
+                </div>
+            )}
+
+            {/* Report review modal */}
             {selectedReport && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
@@ -467,8 +539,7 @@ const AdminReports = () => {
                             <div>
                                 <p className="text-sm font-semibold">Reason</p>
                                 <p className="mt-1 text-sm text-slate-600">
-                                    {REASON_LABELS[selectedReport.reason] ??
-                                        selectedReport.reason}
+                                    {REASON_LABELS[selectedReport.reason] ?? selectedReport.reason}
                                 </p>
                             </div>
 
@@ -479,11 +550,46 @@ const AdminReports = () => {
                                 </p>
                             </div>
 
+                            {/* REPORT EVIDENCE */}
                             <div>
-                                <label
-                                    htmlFor="account-action"
-                                    className="text-sm font-semibold"
-                                >
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-sm font-semibold">Screenshot evidence</p>
+                                    <span className="text-xs text-slate-500">
+                                        {selectedReport.evidence?.length ?? 0} attached
+                                    </span>
+                                </div>
+
+                                {!selectedReport.evidence?.length ? (
+                                    <p className="mt-2 rounded-xl bg-amber-50 p-4 text-sm text-amber-700">
+                                        No evidence images are attached to this report.
+                                    </p>
+                                ) : (
+                                    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                        {selectedReport.evidence.map((item, index) => (
+                                            <button
+                                                key={item._id ?? `${selectedReport._id}-${index}`}
+                                                type="button"
+                                                disabled={saving}
+                                                onClick={() => handleViewEvidence(selectedReport, index)}
+                                                className="rounded-xl border border-slate-200 p-3 text-left transition hover:border-indigo-300 hover:bg-indigo-50/50 disabled:opacity-50"
+                                            >
+                                                <span className="block text-sm font-semibold text-indigo-700">
+                                                    View screenshot {index + 1}
+                                                </span>
+                                                <span className="mt-1 block text-xs text-slate-500">
+                                                    {item.format ? item.format.toUpperCase() : "Image"}
+                                                    {item.bytes
+                                                        ? ` · ${(item.bytes / 1024).toFixed(0)} KB`
+                                                        : ""}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label htmlFor="account-action" className="text-sm font-semibold">
                                     Account action
                                 </label>
 
@@ -516,18 +622,13 @@ const AdminReports = () => {
                             </div>
 
                             <div>
-                                <label
-                                    htmlFor="admin-report-notes"
-                                    className="text-sm font-semibold"
-                                >
+                                <label htmlFor="admin-report-notes" className="text-sm font-semibold">
                                     Internal admin notes
                                 </label>
                                 <textarea
                                     id="admin-report-notes"
                                     value={adminNotes}
-                                    onChange={(event) =>
-                                        setAdminNotes(event.target.value)
-                                    }
+                                    onChange={(event) => setAdminNotes(event.target.value)}
                                     maxLength={1000}
                                     rows={4}
                                     placeholder="Document the review and decision..."
@@ -582,7 +683,6 @@ const AdminReports = () => {
                                 onClick={() => handleUpdate("resolved")}
                                 className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                             >
-                                {/* Resolve */}
                                 {saving
                                     ? "Saving..."
                                     : accountAction === "none"
