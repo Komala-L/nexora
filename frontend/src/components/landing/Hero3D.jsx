@@ -184,7 +184,7 @@ function Scene() {
                 enablePan={false}
                 enableRotate
                 autoRotate
-                autoRotateSpeed={0.35}
+                autoRotateSpeed={1.5}
                 minPolarAngle={Math.PI / 3}
                 maxPolarAngle={(Math.PI * 2) / 3}
             />

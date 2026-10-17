@@ -28,7 +28,9 @@ import AdminSettings from "./pages/admin/AdminSettings";
 
 import ModerationNoticeManager from "./components/ModerationNoticeManager";
 
-import LandingPage from "./pages/public/LandinfPage";
+import LandingPage from "./pages/public/LandingPage";
+import PrivacyPolicy from "./pages/public/PrivacyPolicy";
+import TermsOfService from "./pages/public/TermsOfService";
 
 const App = () => {
     return (
@@ -38,6 +40,16 @@ const App = () => {
             <Route
                 path="/"
                 element={<LandingPage />}
+            />
+
+            <Route
+                path="/privacy-policy"
+                element={<PrivacyPolicy />}
+            />
+
+            <Route
+                path="/terms-of-service"
+                element={<TermsOfService />}
             />
 
             <Route
