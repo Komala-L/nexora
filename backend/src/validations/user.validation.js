@@ -24,7 +24,6 @@ const discoveryPreferencesSchema = z
     .array(
         z.enum(["friends", "professional", "learning"])
     )
-    .min(1, "At least one discovery preference is required.")
     .max(3, "A user can have a maximum of 3 discovery preferences.");
 
 const professionalSchema = z.object({
@@ -155,7 +154,7 @@ export const searchUserSchema = z.object({
 })
 .strict();
 
-/* 4. Nearby User */
+/* 5. Nearby User */
 
 export const nearbyUsersSchema = z.object({
     limit: z.coerce
@@ -166,7 +165,7 @@ export const nearbyUsersSchema = z.object({
         .default(10),
 }).strict();
 
-/* Discovery */
+/* 6. Discovery */
 
 export const discoverUsersSchema = z.object({
     type: z.enum(

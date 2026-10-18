@@ -48,18 +48,27 @@ export const registerUser = asyncHandler(async (req, res) => {
 
     await user.save();
 
-    return res.status(201).json(
-        new ApiResponse(
-            201,
-            {
-                id: user._id,
-                name: user.name,
-                gender: user.gender,
-                email: user.email,
-            },
-            "Account created successfully"
-        )
-    );
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+
+    return res
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .status(201)
+        .json(
+            new ApiResponse(
+                201,
+                {
+                    user: {
+                        id: user._id,
+                        name: user.name,
+                        gender: user.gender,
+                        email: user.email,
+                        profileCompleted: user.profileCompleted,
+                    },
+                },
+                "Account created and logged in successfully"
+            )
+        );
 });
 
 export const loginUser = asyncHandler(async (req, res) => {

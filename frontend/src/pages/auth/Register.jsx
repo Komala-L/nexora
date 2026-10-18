@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { registerUser } from "../../services/auth.service";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const Register = () => {
+    const navigate = useNavigate();
+    const { checkAuth } = useAuth();
     const [formData, setFormData] = useState({
         name: "",
         gender: "",
@@ -98,17 +102,17 @@ const Register = () => {
 
             console.log("Registration successful:", response);
 
-            setSuccessMessage(
-                response.message || "Account created successfully"
-            );
+            const authenticatedUser = await checkAuth();
 
-            setFormData({
-                name: "",
-                gender: "",
-                email: "",
-                password: "",
-                confirmPassword: "",
-            });
+            if (!authenticatedUser) {
+                throw new Error(
+                    "Account created, but automatic login failed. Please log in."
+                );
+            }
+
+            navigate("/home", { replace: true });
+            return;
+
         } catch (error) {
             console.error("Registration failed:", error);
 

@@ -39,6 +39,14 @@ const Home = () => {
         type = discoveryType,
         selectedRadius = radius
     ) => {
+        if (!user?.locationDetails) {
+            setDiscoveredUsers([]);
+            setLocationRequired(true);
+            setError("");
+            setIsLoading(false);
+            return;
+        }
+
         try {
             setIsLoading(true);
             setError("");
@@ -50,14 +58,9 @@ const Home = () => {
                 selectedRadius
             );
 
-            setDiscoveredUsers(
-                response.data.users || []
-            );
+            setDiscoveredUsers(response.data.users || []);
         } catch (error) {
-            console.error(
-                "Failed to discover users:",
-                error
-            );
+            console.error("Failed to discover users:", error);
 
             if (
                 error.message ===
@@ -67,8 +70,7 @@ const Home = () => {
                 setDiscoveredUsers([]);
             } else {
                 setError(
-                    error.message ||
-                    "Failed to discover users."
+                    error.message || "Failed to discover users."
                 );
             }
         } finally {
@@ -245,7 +247,7 @@ const Home = () => {
     useEffect(() => {
         fetchDiscoveredUsers();
         fetchConnectionStatuses();
-    }, []);
+    }, [user?._id]);
 
     const handleEnableLocation = () => {
         if (!navigator.geolocation) {
