@@ -46,44 +46,73 @@ const discoveryOptions = [
 const Discover = () => {
     const navigate = useNavigate();
     const [selectedType, setSelectedType] = useState("nearby");
-    const [radius, setRadius] = useState(10);
+    const [radius, setRadius] = useState(2);
 
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
 
-    const fetchUsers = async () => {
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+    const fetchUsers = async (nextPage = 1, append = false) => {
         try {
-            setIsLoading(true);
-            setError("");
+            if (append) {
+                setIsLoadingMore(true);
+            } else {
+                setIsLoading(true);
+                setError("");
+            }
 
             const response = await discoverUsers(
                 selectedType,
-                10,
-                radius
+                9,
+                radius,
+                nextPage
             );
 
-            setUsers(response.data.users || []);
-        } catch (error) {
-            console.error(
-                "Failed to discover users:",
-                error
-            );
+            const fetchedUsers = response.data.users || [];
 
-            setError(
-                error.message ||
-                "Failed to discover users."
-            );
+            if (append) {
+                setUsers((previousUsers) => {
+                    const existingIds = new Set(
+                        previousUsers.map((user) => user._id.toString())
+                    );
 
-            setUsers([]);
+                    const uniqueNewUsers = fetchedUsers.filter(
+                        (user) => !existingIds.has(user._id.toString())
+                    );
+
+                    return [...previousUsers, ...uniqueNewUsers];
+                });
+            } else {
+                setUsers(fetchedUsers);
+            }
+
+            setPage(nextPage);
+            setHasMore(Boolean(response.data.hasMore));
+        } catch (err) {
+            setError(err.message || "Failed to load users.");
         } finally {
             setIsLoading(false);
+            setIsLoadingMore(false);
         }
     };
 
     useEffect(() => {
-        fetchUsers();
+        setUsers([]);
+        setPage(1);
+        setHasMore(false);
+
+        fetchUsers(1, false);
     }, [selectedType, radius]);
+
+    const handleViewMore = () => {
+        if (!isLoading && !isLoadingMore && hasMore) {
+            fetchUsers(page + 1, true);
+        }
+    };
 
     return (
         <div className="mx-auto max-w-7xl space-y-8">
@@ -192,11 +221,15 @@ const Discover = () => {
                         }
                         className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                     >
+                        <option value={2}>2 km</option>
                         <option value={5}>5 km</option>
                         <option value={10}>10 km</option>
                         <option value={25}>25 km</option>
                         <option value={50}>50 km</option>
                         <option value={100}>100 km</option>
+                        <option value={250}>250 km</option>
+                        <option value={500}>500 km</option>
+                        <option value={1000}>1000 km</option>
                     </select>
                 </div>
             </section>
@@ -355,6 +388,27 @@ const Discover = () => {
                             })}
                         </div>
                     )}
+
+                {/* View More */}
+                {!isLoading && !error && hasMore && users.length > 0 && (
+                    <div className="flex justify-center py-6">
+                        <button
+                            type="button"
+                            onClick={handleViewMore}
+                            disabled={isLoadingMore}
+                            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {isLoadingMore && (
+                                <Loader2
+                                    size={16}
+                                    className="animate-spin"
+                                />
+                            )}
+
+                            {isLoadingMore ? "Loading..." : "View More"}
+                        </button>
+                    </div>
+                )}
             </section>
         </div>
     );

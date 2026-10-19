@@ -25,8 +25,11 @@ const Home = () => {
     const navigate = useNavigate();
     
     const [discoveredUsers, setDiscoveredUsers] = useState([]);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [discoveryType, setDiscoveryType] = useState("nearby");
-    const [radius, setRadius] = useState(10);
+    const [radius, setRadius] = useState(2);
     const [isLoading, setIsLoading] = useState(true);
     const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
     const [locationRequired, setLocationRequired] = useState(false);
@@ -37,28 +40,57 @@ const Home = () => {
 
     const fetchDiscoveredUsers = async (
         type = discoveryType,
-        selectedRadius = radius
+        selectedRadius = radius,
+        nextPage = 1,
+        append = false
     ) => {
         if (!user?.locationDetails) {
             setDiscoveredUsers([]);
+            setHasMore(false);
             setLocationRequired(true);
             setError("");
             setIsLoading(false);
+            setIsLoadingMore(false);
             return;
         }
 
         try {
-            setIsLoading(true);
-            setError("");
+            if (append) {
+                setIsLoadingMore(true);
+            } else {
+                setIsLoading(true);
+                setError("");
+                setDiscoveredUsers([]);
+            }
+
             setLocationRequired(false);
 
             const response = await discoverUsers(
                 type,
-                10,
-                selectedRadius
+                9,
+                selectedRadius,
+                nextPage
             );
 
-            setDiscoveredUsers(response.data.users || []);
+            const fetchedUsers = response.data.users || [];
+
+            setDiscoveredUsers((previous) => {
+                if (!append) return fetchedUsers;
+
+                const existingIds = new Set(
+                    previous.map((person) => person._id)
+                );
+
+                return [
+                    ...previous,
+                    ...fetchedUsers.filter(
+                        (person) => !existingIds.has(person._id)
+                    ),
+                ];
+            });
+
+            setPage(nextPage);
+            setHasMore(Boolean(response.data.hasMore));
         } catch (error) {
             console.error("Failed to discover users:", error);
 
@@ -68,15 +100,16 @@ const Home = () => {
             ) {
                 setLocationRequired(true);
                 setDiscoveredUsers([]);
+                setHasMore(false);
             } else {
-                setError(
-                    error.message || "Failed to discover users."
-                );
+                setError(error.message || "Failed to discover users.");
             }
         } finally {
             setIsLoading(false);
+            setIsLoadingMore(false);
         }
     };
+
 
     const fetchConnectionStatuses = async () => {
         try {
@@ -439,13 +472,15 @@ const Home = () => {
                                         key={category.value}
                                         type="button"
                                         onClick={() => {
-                                            setDiscoveryType(
-                                                category.value
-                                            );
+                                            if (discoveryType === category.value) return;
+
+                                            setDiscoveryType(category.value);
 
                                             fetchDiscoveredUsers(
                                                 category.value,
-                                                radius
+                                                radius,
+                                                1,
+                                                false
                                             );
                                         }}
                                         className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
@@ -474,19 +509,21 @@ const Home = () => {
                                 id="discovery-radius"
                                 value={radius}
                                 onChange={(event) => {
-                                    const newRadius = Number(
-                                        event.target.value
-                                    );
+                                    const newRadius = Number(event.target.value);
 
                                     setRadius(newRadius);
 
                                     fetchDiscoveredUsers(
                                         discoveryType,
-                                        newRadius
+                                        newRadius,
+                                        1,
+                                        false
                                     );
                                 }}
                                 className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                             >
+                                <option value={2}>2 km</option>
+                                <option value={5}>5 km</option>
                                 <option value={10}>10 km</option>
                                 <option value={25}>25 km</option>
                                 <option value={50}>50 km</option>
@@ -762,6 +799,32 @@ const Home = () => {
                                     </div>
                                 );
                             })}
+                        </div>  
+                    )}
+                    {hasMore && (
+                        <div className="mt-8 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    fetchDiscoveredUsers(
+                                        discoveryType,
+                                        radius,
+                                        page + 1,
+                                        true
+                                    )
+                                }
+                                disabled={isLoadingMore}
+                                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {isLoadingMore ? (
+                                    <>
+                                        <Loader2 size={17} className="animate-spin" />
+                                        Loading more...
+                                    </>
+                                ) : (
+                                    "View More"
+                                )}
+                            </button>
                         </div>
                     )}
             </section>

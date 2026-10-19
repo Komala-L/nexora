@@ -156,42 +156,22 @@ export const searchUserSchema = z.object({
 
 /* 5. Nearby User */
 
+export const discoverUsersSchema = z.object({
+    type: z.enum(
+        ["nearby", "friends", "professional", "learning", "interests"],
+        { message: "Invalid discovery type." }
+    ),
+    limit: z.coerce.number().int().min(1).max(50).default(9),
+    page: z.coerce.number().int().min(1).default(1),
+    radius: z.coerce.number().int().min(1).max(1000).default(10),
+}).strict();
+
+
 export const nearbyUsersSchema = z.object({
     limit: z.coerce
         .number()
         .int("Limit must be an integer.")
         .min(1, "Limit must be at least 1.")
         .max(50, "Limit cannot exceed 50.")
-        .default(10),
-}).strict();
-
-/* 6. Discovery */
-
-export const discoverUsersSchema = z.object({
-    type: z.enum(
-        [
-            "nearby",
-            "friends",
-            "professional",
-            "learning",
-            "interests",
-        ],
-        {
-            message: "Invalid discovery type.",
-        }
-    ),
-
-    limit: z.coerce
-        .number()
-        .int("Limit must be an integer.")
-        .min(1, "Limit must be at least 1.")
-        .max(50, "Limit cannot exceed 50.")
-        .default(10),
-
-    radius: z.coerce
-        .number()
-        .int("Radius must be an integer.")
-        .min(1, "Radius must be at least 1 km.")
-        .max(500, "Radius cannot exceed 500 km.")
         .default(10),
 }).strict();

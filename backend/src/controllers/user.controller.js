@@ -188,23 +188,23 @@ export const nearbyUsers = asyncHandler(async (req, res) => {
 export const discoverUsersController = asyncHandler(async (req, res) => {
     const {
         type,
-        limit = 10,
+        limit = 9,
         radius = 10,
+        page = 1,
     } = req.validatedQuery;
 
-    const users = await discoverUsers(
+    const result = await discoverUsers(
         req.user._id,
         type,
         limit,
-        radius
+        radius,
+        page
     );
 
     return res.status(200).json(
         new ApiResponse(
             200,
-            {
-                users,
-            },
+            result,
             "Users discovered successfully"
         )
     );

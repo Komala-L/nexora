@@ -75,6 +75,7 @@ const Sidebar = () => {
     const [requestCount, setRequestCount] = useState(0);
     const userName = user?.name || "User";
     const userInitial = userName.charAt(0).toUpperCase();
+    const profilePicUrl = user?.profilePic?.url;
 
     useEffect(() => {
         if (authLoading || !user) {
@@ -209,9 +210,19 @@ const Sidebar = () => {
                     to="/profile"
                     className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 transition hover:bg-slate-100"
                 >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700">
-                        {userInitial}
-                    </div>
+                    {profilePicUrl ? (
+                        <img
+                            src={profilePicUrl}
+                            alt={`${userName}'s profile`}
+                            className="h-10 w-10 shrink-0 rounded-full object-cover"
+                        />
+                    ) : (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700">
+                            {userInitial}
+                        </div>
+                    )}
+
+
 
                     <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-900">

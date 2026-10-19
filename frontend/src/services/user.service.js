@@ -22,13 +22,15 @@ export const getNearbyUsers = async (limit = 10) => {
 
 export const discoverUsers = async (
     type,
-    limit = 10,
-    radius = 10
+    limit = 9,
+    radius = 10,
+    page = 1
 ) => {
     const params = new URLSearchParams({
         type,
         limit: String(limit),
         radius: String(radius),
+        page: String(page),
     });
 
     const response = await fetch(
