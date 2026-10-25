@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import AdminLayout from "../../components/admin/AdminLayout";
 import {
     getAdminReports,
     updateAdminReport,
@@ -210,8 +209,8 @@ const AdminReports = () => {
     const endIndex = Math.min(page * PAGE_SIZE, totalReports);
 
     return (
-        <AdminLayout title="Reports Management">
-            <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
+        <>
+            <div className="w-full p-5 sm:p-6 lg:p-8 space-y-6 p-4">
                 <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                     <div className="grid gap-3 md:grid-cols-[1fr_220px]">
                         <label className="block">
@@ -702,7 +701,7 @@ const AdminReports = () => {
                     </section>
                 </div>
             )}
-        </AdminLayout>
+        </>
     );
 };
 

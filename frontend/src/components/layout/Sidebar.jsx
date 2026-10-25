@@ -154,13 +154,15 @@ const Sidebar = () => {
     }, [authLoading, user]);
 
     return (
-        <aside className="hidden w-60 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
+        <aside className="hidden w-60 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col"> 
             {/* Brand */}
             <div className="flex h-20 items-center px-6">
                 <div className="flex items-center gap-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">
-                        N
-                    </div>
+                    <img
+                        src="/images/nexora-logo.png"
+                        alt="Nexora logo"
+                        className="h-10 w-10 shrink-0 object-contain"
+                    />
 
                     <span className="text-lg font-bold tracking-[0.16em] text-slate-900">
                         NEXORA
@@ -222,8 +224,6 @@ const Sidebar = () => {
                         </div>
                     )}
 
-
-
                     <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-900">
                             {userName}
@@ -248,7 +248,6 @@ const Sidebar = () => {
                     </span>
                 </button>
             </div>
-
         </aside>
     );
 };

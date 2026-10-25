@@ -1,20 +1,10 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useAdminAuth } from "../../context/AdminAuthContext";
 import { getAdminDashboardStats, getAdminPlatformActivity, } from "../../services/adminUser.service";
 import { getAdminSettings } from "../../services/adminSettings.service";
-
-const navigation = [
-    { label: "Overview", icon: "◫", path: "/admin" },
-    { label: "Users", icon: "♙", path: "/admin/users" },
-    { label: "Reports", icon: "⚑", active: false, path: "/admin/reports" },
-    { label: "Settings", icon: "⚙", path: "/admin/settings" },
-];
+import { useAdminAuth } from "../../context/AdminAuthContext";
 
 const AdminDashboard = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const { admin, logoutAdmin } = useAdminAuth();
+    const { admin } = useAdminAuth();
 
     const [stats, setStats] = useState(null);
     const [statsLoading, setStatsLoading] = useState(true);
@@ -102,7 +92,6 @@ const AdminDashboard = () => {
 
         const loadActivity = async () => {
             if (requestInProgress) return;
-
             requestInProgress = true;
 
             try {
@@ -140,14 +129,6 @@ const AdminDashboard = () => {
         };
     }, [activityDays]);
 
-    const handleLogout = async () => {
-        try {
-            await logoutAdmin();
-        } finally {
-            navigate("/admin/login", { replace: true });
-        }
-    };
-
     const statCards = [
         {
             title: "Total users",
@@ -176,115 +157,8 @@ const AdminDashboard = () => {
     ];
 
     return (
-        <div className="flex min-h-screen bg-slate-50 text-slate-900">
-            <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
-                <div className="flex h-[76px] items-center gap-3 border-b border-slate-100 px-6">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">
-                        N
-                    </div>
-                    <div>
-                        <p className="text-lg font-extrabold tracking-[0.16em]">
-                            NEXORA
-                        </p>
-                        <p className="text-xs text-slate-400">ADMIN CONSOLE</p>
-                    </div>
-                </div>
-
-                <div className="px-4 pt-7">
-                    <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                        Workspace
-                    </p>
-
-                    <nav className="space-y-1">
-                        {navigation.map((item) => {
-                            const isActive = item.path === location.pathname;
-
-                            return (
-                                <button
-                                    key={item.label}
-                                    type="button"
-                                    disabled={!item.path}
-                                    onClick={() => {
-                                        if (item.path) navigate(item.path);
-                                    }}
-                                    className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                                        isActive
-                                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
-                                            : item.path
-                                                ? "text-slate-600 hover:bg-slate-100"
-                                                : "cursor-not-allowed text-slate-400"
-                                    }`}
-                                >
-                                    <span className="text-lg">{item.icon}</span>
-                                    {item.label}
-                                    {!item.path && (
-                                        <span className="ml-auto text-[10px] text-slate-400">
-                                            Soon
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </nav>
-                </div>
-
-                <div className="mt-auto border-t border-slate-100 p-4">
-                    <div className="mb-3 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700">
-                            {(admin?.name || "A").charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold">
-                                {admin?.name || "Administrator"}
-                            </p>
-                            <p className="truncate text-xs capitalize text-slate-500">
-                                {admin?.role || "admin"}
-                            </p>
-                        </div>
-                    </div>
-
-                    <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="w-full rounded-xl px-4 py-2.5 text-left text-sm font-medium text-slate-600 transition hover:bg-red-50 hover:text-red-600"
-                    >
-                        ↪ Sign out
-                    </button>
-                </div>
-            </aside>
-
-            <main className="min-w-0 flex-1">
-                <header className="flex min-h-[76px] items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 sm:px-8">
-                    <div>
-                        <p className="text-xs font-medium text-slate-400">
-                            Nexora / Administration
-                        </p>
-                        <h1 className="mt-1 text-lg font-bold">Overview</h1>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <div className="hidden text-right sm:block">
-                            <p className="text-sm font-semibold">
-                                {admin?.name || "Administrator"}
-                            </p>
-                            <p className="text-xs capitalize text-slate-500">
-                                {admin?.role || "admin"}
-                            </p>
-                        </div>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700">
-                            {(admin?.name || "A").charAt(0).toUpperCase()}
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleLogout}
-                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 md:hidden"
-                        >
-                            Exit
-                        </button>
-                    </div>
-                </header>
-
-                <div className="mx-auto max-w-[1500px] p-5 sm:p-8">
+        <div className="min-w-0 flex-1 bg-slate-50 text-slate-900">
+            <div className="mx-auto max-w-[1500px] p-5 sm:p-8">
                     <div className="mb-8">
                         <p className="text-sm font-semibold text-indigo-600">
                             ADMINISTRATION
@@ -665,10 +539,9 @@ const AdminDashboard = () => {
                     <p className="mt-8 text-center text-xs text-slate-400">
                         Nexora Admin Console
                     </p>
-                </div>
-            </main>
+            </div>
         </div>
     );
-};
+}
 
 export default AdminDashboard;

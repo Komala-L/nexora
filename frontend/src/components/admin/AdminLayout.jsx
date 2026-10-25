@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 
 const navigation = [
@@ -8,7 +8,7 @@ const navigation = [
     { label: "Settings", icon: "⚙", path: "/admin/settings" },
 ];
 
-const AdminLayout = ({ title, children }) => {
+const AdminLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { admin, logoutAdmin } = useAdminAuth();
@@ -29,24 +29,37 @@ const AdminLayout = ({ title, children }) => {
     };
 
     return (
-        <div className="flex min-h-screen bg-slate-50 text-slate-900">
+        <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
             {/* Sidebar */}
-            <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
-                <div className="flex h-[76px] items-center gap-3 border-b border-slate-100 px-6">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">
-                        N
-                    </div>
-                    <div>
-                        <p className="text-lg font-extrabold tracking-[0.16em]">
-                            NEXORA
-                        </p>
-                        <p className="text-xs text-slate-400">
-                            ADMIN CONSOLE
-                        </p>
-                    </div>
+            <aside className="hidden h-screen w-64 shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white md:flex">
+                <div className="flex h-[76px] items-center gap-3 border-b border-slate-100 px-6">            
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+                    <img
+                        src="/images/nexora-logo.png"
+                        alt="Nexora logo"
+                        width={40}
+                        height={40}
+                        className="block h-10 w-10 object-contain"
+                        onError={(event) => {
+                            console.error(
+                                "Nexora admin sidebar logo failed to load:",
+                                event.currentTarget.src
+                            );
+                        }}
+                    />
                 </div>
 
-                <div className="px-4 pt-7">
+                <div>
+                    <p className="text-lg font-extrabold tracking-[0.16em]">
+                        NEXORA
+                    </p>
+                    <p className="text-xs text-slate-400">
+                        ADMIN CONSOLE
+                    </p>
+                </div>
+            </div>
+
+                <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-7">
                     <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                         Workspace
                     </p>
@@ -113,7 +126,7 @@ const AdminLayout = ({ title, children }) => {
             </aside>
 
             {/* Main content */}
-            <main className="min-w-0 flex-1">
+            <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
                 {/* Top navbar */}
                 <header className="flex min-h-[76px] items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 sm:px-8">
                     <div>
@@ -121,7 +134,15 @@ const AdminLayout = ({ title, children }) => {
                             Nexora / Administration
                         </p>
                         <h1 className="mt-1 text-lg font-bold">
-                            {title}
+                            {location.pathname === "/admin"
+                                ? "Overview"
+                                : location.pathname.startsWith("/admin/users")
+                                    ? "Users"
+                                    : location.pathname.startsWith("/admin/reports")
+                                        ? "Reports"
+                                        : location.pathname.startsWith("/admin/settings")
+                                            ? "Settings"
+                                            : "Administration"}
                         </h1>
                     </div>
 
@@ -149,7 +170,7 @@ const AdminLayout = ({ title, children }) => {
                     </div>
                 </header>
 
-                {children}
+                <Outlet />
             </main>
         </div>
     );

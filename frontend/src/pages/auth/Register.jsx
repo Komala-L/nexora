@@ -125,235 +125,322 @@ const Register = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 px-4 py-10 text-white">
-            <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-md items-center justify-center">
-                <div className="w-full rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:p-8">
-                    {/* Header */}
+        <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 py-10 text-slate-100">
+            <div className="pointer-events-none absolute -left-32 -top-32 h-80 w-80 rounded-full bg-indigo-600/20 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-32 -right-32 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl" />
+
+                <section className="relative w-full max-w-md">
                     <div className="mb-8 text-center">
-                        <h1 className="text-3xl font-bold tracking-tight">
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-indigo-400/30 bg-indigo-500/15 shadow-lg shadow-indigo-950/30">
+                            <img
+                                src="/images/nexora-logo.png"
+                                alt="Nexora logo"
+                                className="h-10 w-10 object-contain"
+                            />
+                        </div>
+
+                        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-300">
                             Nexora
+                        </p>
+
+                        <h1 className="mt-3 text-3xl font-semibold tracking-tight">
+                            Create Your Account
                         </h1>
 
                         <p className="mt-2 text-sm text-slate-400">
-                            Create your account
+                            Discover people, share interests, and expand your orbit.
                         </p>
                     </div>
 
-                    <form
-                        onSubmit={handleSubmit}
-                        className="space-y-5"
-                    >
-                        {/* Server Error */}
-                        {serverError && (
-                            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                                {serverError}
-                            </div>
-                        )}
-
-                        {/* Success Message */}
-                        {successMessage && (
-                            <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
-                                {successMessage}
-                            </div>
-                        )}
-                        
-                        {/* Name */}
-                        <div>
-                            <label
-                                htmlFor="name"
-                                className="mb-2 block text-sm font-medium text-slate-200"
-                            >
-                                Name
-                            </label>
-
-                            <input
-                                id="name"
-                                type="text"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                placeholder="Enter your name"
-                                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                            />
-
-                            {errors.name && (
-                                <p className="mt-2 text-sm text-red-400">
-                                    {errors.name}
-                                </p>
+                    <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-8">
+                        <form
+                            onSubmit={handleSubmit}
+                            className="space-y-5"
+                        >
+                            {/* Server Error */}
+                            {serverError && (
+                                <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                                    {serverError}
+                                </div>
                             )}
-                        </div>
-                        
-                        {/* Gender */}
-                        <div>
-                            <label
-                                htmlFor="gender"
-                                className="mb-2 block text-sm font-medium text-slate-200"
-                            >
-                                Gender
-                            </label>
 
-                            <select
-                                id="gender"
-                                name="gender"
-                                value={formData.gender}
-                                onChange={handleChange}
-                                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                            >
-                                <option value="" disabled>
-                                    Select your gender
-                                </option>
-
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                            </select>
-
-                            {errors.gender && (
-                                <p className="mt-2 text-sm text-red-400">
-                                    {errors.gender}
-                                </p>
+                            {/* Success Message */}
+                            {successMessage && (
+                                <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+                                    {successMessage}
+                                </div>
                             )}
-                        </div>
-
-                        {/* Email */}
-                        <div>
-                            <label
-                                htmlFor="email"
-                                className="mb-2 block text-sm font-medium text-slate-200"
-                            >
-                                Email
-                            </label>
-
-                            <input
-                                id="email"
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                placeholder="Enter your email"
-                                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                            />
-
-                            {errors.email && (
-                                <p className="mt-2 text-sm text-red-400">
-                                    {errors.email}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Password */}
-                        <div>
-                            <label
-                                htmlFor="password"
-                                className="mb-2 block text-sm font-medium text-slate-200"
-                            >
-                                Password
-                            </label>
                             
-                            <div className="relative">
+                            {/* Name */}
+                            <div>
+                                <label
+                                    htmlFor="name"
+                                    className="mb-2 block text-sm font-medium text-slate-200"
+                                >
+                                    Name
+                                </label>
+
                                 <input
-                                    id="password"
-                                    type={showPassword ? "text" : "password"}
-                                    name="password"
-                                    value={formData.password}
+                                    id="name"
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
                                     onChange={handleChange}
-                                    placeholder="Enter your password"
+                                    placeholder="Enter your name"
                                     className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                                 />
+
+                                {errors.name && (
+                                    <p className="mt-2 text-sm text-red-400">
+                                        {errors.name}
+                                    </p>
+                                )}
+                            </div>
                             
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setShowPassword(
-                                            (previous) => !previous
-                                        )
-                                    }
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-200"
-                                    aria-label={
-                                        showConfirmPassword
-                                            ? "Hide password"
-                                            : "Show password"
-                                    }
+                            {/* Gender */}
+                            <div>
+                                <label
+                                    htmlFor="gender"
+                                    className="mb-2 block text-sm font-medium text-slate-200"
                                 >
-                                    {showPassword ? "🙈" : "👁️"}
-                                </button>
+                                    Gender
+                                </label>
+
+                                <select
+                                    id="gender"
+                                    name="gender"
+                                    value={formData.gender}
+                                    onChange={handleChange}
+                                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                                >
+                                    <option value="" disabled>
+                                        Select your gender
+                                    </option>
+
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+
+                                {errors.gender && (
+                                    <p className="mt-2 text-sm text-red-400">
+                                        {errors.gender}
+                                    </p>
+                                )}
                             </div>
 
-                            {errors.password && (
-                                <p className="mt-2 text-sm text-red-400">
-                                    {errors.password}
-                                </p>
-                            )}
-                        </div>
+                            {/* Email */}
+                            <div>
+                                <label
+                                    htmlFor="email"
+                                    className="mb-2 block text-sm font-medium text-slate-200"
+                                >
+                                    Email
+                                </label>
 
-                        
-                        {/* Confirm Password */}
-                        <div>
-                            <label
-                                htmlFor="confirmPassword"
-                                className="mb-2 block text-sm font-medium text-slate-200"
-                            >
-                                Confirm Password
-                            </label>
-
-                            <div className="relative">
                                 <input
-                                    id="confirmPassword"
-                                    type={showConfirmPassword ? "text" : "password"}
-                                    name="confirmPassword"
-                                    value={formData.confirmPassword}
+                                    id="email"
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
                                     onChange={handleChange}
-                                    placeholder="Confirm your password"
-                                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 pr-12 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                                    placeholder="Enter your email"
+                                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                                 />
 
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setShowConfirmPassword(
-                                            (previous) => !previous
-                                        )
-                                    }
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-200"
-                                    aria-label={
-                                        showConfirmPassword
-                                            ? "Hide password"
-                                            : "Show password"
-                                    }
-                                >
-                                    {showConfirmPassword ? "🙈" : "👁️"}
-                                </button>
+                                {errors.email && (
+                                    <p className="mt-2 text-sm text-red-400">
+                                        {errors.email}
+                                    </p>
+                                )}
                             </div>
 
-                            {errors.confirmPassword && (
-                                <p className="mt-2 text-sm text-red-400">
-                                    {errors.confirmPassword}
+                            {/* Password */}
+                            <div>
+                                <label
+                                    htmlFor="password"
+                                    className="mb-2 block text-sm font-medium text-slate-200"
+                                >
+                                    Password
+                                </label>
+                                
+                                <div className="relative">
+                                    <input
+                                        id="password"
+                                        type={showPassword ? "text" : "password"}
+                                        name="password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        placeholder="Enter your password"
+                                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                                    />
+                            
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((previous) => !previous)}
+                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                        aria-pressed={showPassword}
+                                        className="absolute inset-y-0 right-0 flex items-center justify-center px-4 text-slate-400 transition hover:text-indigo-300 focus:outline-none focus:text-indigo-300"
+                                    >
+                                        {showPassword ? (
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="20"
+                                                height="20"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="1.8"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                aria-hidden="true"
+                                            >
+                                                <path d="M3 3l18 18" />
+                                                <path d="M10.6 10.6a2 2 0 002.8 2.8" />
+                                                <path d="M9.9 5.2A10.8 10.8 0 0112 5c5.5 0 9 7 9 7a15.8 15.8 0 01-3 3.8" />
+                                                <path d="M6.6 6.6C4.1 8.2 3 12 3 12s3.5 7 9 7a10 10 0 004.1-.9" />
+                                            </svg>
+                                        ) : (
+                                            // Eye: password is hidden
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="20"
+                                                height="20"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="1.8"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                aria-hidden="true"
+                                            >
+                                                <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+                                                <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                </div>
+
+                                {errors.password && (
+                                    <p className="mt-2 text-sm text-red-400">
+                                        {errors.password}
+                                    </p>
+                                )}
+                            </div>
+
+                            
+                            {/* Confirm Password */}
+                            <div>
+                                <label
+                                    htmlFor="confirmPassword"
+                                    className="mb-2 block text-sm font-medium text-slate-200"
+                                >
+                                    Confirm Password
+                                </label>
+
+                                <div className="relative">
+                                    <input
+                                        id="confirmPassword"
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        name="confirmPassword"
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        placeholder="Confirm your password"
+                                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 pr-12 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((previous) => !previous)}
+                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                        aria-pressed={showPassword}
+                                        className="absolute inset-y-0 right-0 flex items-center justify-center px-4 text-slate-400 transition hover:text-indigo-300 focus:outline-none focus:text-indigo-300"
+                                    >
+                                        {showPassword ? (
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="20"
+                                                height="20"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="1.8"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                aria-hidden="true"
+                                            >
+                                                <path d="M3 3l18 18" />
+                                                <path d="M10.6 10.6a2 2 0 002.8 2.8" />
+                                                <path d="M9.9 5.2A10.8 10.8 0 0112 5c5.5 0 9 7 9 7a15.8 15.8 0 01-3 3.8" />
+                                                <path d="M6.6 6.6C4.1 8.2 3 12 3 12s3.5 7 9 7a10 10 0 004.1-.9" />
+                                            </svg>
+                                        ) : (
+                                            // Eye: password is hidden
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="20"
+                                                height="20"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="1.8"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                aria-hidden="true"
+                                            >
+                                                <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+                                                <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                </div>
+
+                                {errors.confirmPassword && (
+                                    <p className="mt-2 text-sm text-red-400">
+                                        {errors.confirmPassword}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Submit */}
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {isSubmitting ? "Creating Account..." : "Create Account"}
+                            </button>
+                        </form>
+
+                        {/* Login Link */}
+                        <div className="mt-6 space-y-5">
+                            <p className="text-center text-sm text-slate-400">
+                                Already have an account?{" "}
+                                <a
+                                    href="/login"
+                                    className="font-semibold text-indigo-300 transition hover:text-cyan-300"
+                                >
+                                    Login
+                                </a>
+                            </p>
+
+                            <div className="border-t border-white/10 pt-5">
+                                <p className="text-center text-xs text-slate-500">
+                                    Managing the Nexora platform?
                                 </p>
-                            )}
+
+                                <button
+                                    type="button"
+                                    onClick={() => navigate("/admin/login")}
+                                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-400/25 bg-indigo-500/10 px-4 py-3 text-sm font-medium text-indigo-200 transition hover:border-indigo-300/50 hover:bg-indigo-500/20 hover:text-white"
+                                >
+                                    <span aria-hidden="true">↗</span>
+                                    Open Admin Portal
+                                </button>
+                            </div>
                         </div>
-
-                        {/* Submit */}
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            {isSubmitting ? "Creating Account..." : "Create Account"}
-                        </button>
-                    </form>
-
-                    {/* Login Link */}
-                    <p className="mt-6 text-center text-sm text-slate-400">
-                        Already have an account?{" "}
-                        <a
-                            href="/login"
-                            className="font-medium text-indigo-400 transition hover:text-indigo-300"
-                        >
-                            Login
-                        </a>
-                    </p>
-                </div>
-            </div>
-        </div>
+                    </div>
+                </section>
+        </main>
     );
 };
 

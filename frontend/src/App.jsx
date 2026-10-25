@@ -25,6 +25,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminLayout from "./components/admin/AdminLayout";
 
 import ModerationNoticeManager from "./components/ModerationNoticeManager";
 
@@ -61,7 +62,6 @@ const App = () => {
                 path="/login"
                 element={<Login />}
             />
-
             
             {/* SHARED ADMIN AUTHENTICATION */}
             <Route
@@ -80,28 +80,29 @@ const App = () => {
 
                 {/* Protected admin pages */}
                 <Route element={<ProtectedAdminRoute />}>
-                    <Route
-                        index
-                        element={<AdminDashboard />}
-                    />
+                    <Route element={<AdminLayout />}>
+                        <Route
+                            index
+                            element={<AdminDashboard />}
+                        />
 
-                    <Route
-                        path="users"
-                        element={<AdminUsers />}
-                    />
+                        <Route
+                            path="users"
+                            element={<AdminUsers />}
+                        />
 
-                     <Route 
-                        path="reports" 
-                        element={<AdminReports />} 
-                    />
+                        <Route
+                            path="reports"
+                            element={<AdminReports />}
+                        />
 
-                    <Route 
-                        path="settings" 
-                        element={<AdminSettings />} 
-                    />
+                        <Route
+                            path="settings"
+                            element={<AdminSettings />}
+                        />
+                    </Route>
                 </Route>
             </Route>
-
 
             {/* PROTECTED ROUTES */}
             <Route element={<ProtectedRoute />}>

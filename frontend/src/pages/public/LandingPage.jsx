@@ -77,7 +77,11 @@ function Navbar() {
                     onClick={closeMenu}
                 >
                     <span className="brand-mark">
-                        <Compass size={23} strokeWidth={1.8} />
+                        <img
+                            src="/images/nexora-logo.png"
+                            alt=""
+                            className="brand-logo-image"
+                        />
                     </span>
                     <span>NEXORA<span className="brand-period">.</span></span>
                 </Link>
@@ -375,7 +379,11 @@ function LandingPage() {
             <footer className="landing-footer">
                 <Link to="/" className="landing-brand">
                     <span className="brand-mark">
-                        <Compass size={21} />
+                        <img
+                            src="/images/nexora-logo.png"
+                            alt=""
+                            className="brand-logo-image"
+                        />
                     </span>
                     <span>NEXORA<span className="brand-period">.</span></span>
                 </Link>
