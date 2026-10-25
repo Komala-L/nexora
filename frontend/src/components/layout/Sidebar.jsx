@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import {
     Compass,
     Home,
+    LogOut,
     MessageCircle,
     Settings,
     User,
     UserPlus,
     Users,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getReceivedConnectionRequestCount } from "../../services/connection.service.js";
 import { socket } from "../../socket/socket";
@@ -52,11 +53,29 @@ const navigationItems = [
 ];
 
 const Sidebar = () => {
-    const { user, isLoading: authLoading } = useAuth();
+    const { user, isLoading: authLoading, logout } = useAuth();
+    const navigate = useNavigate();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async () => {
+        if (isLoggingOut) return;
+
+        setIsLoggingOut(true);
+
+        try {
+            await logout();
+            navigate("/login", { replace: true });
+        } catch (error) {
+            console.error("Failed to log out:", error);
+        } finally {
+            setIsLoggingOut(false);
+        }
+    };
 
     const [requestCount, setRequestCount] = useState(0);
     const userName = user?.name || "User";
     const userInitial = userName.charAt(0).toUpperCase();
+    const profilePicUrl = user?.profilePic?.url;
 
     useEffect(() => {
         if (authLoading || !user) {
@@ -135,13 +154,15 @@ const Sidebar = () => {
     }, [authLoading, user]);
 
     return (
-        <aside className="hidden w-60 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
+        <aside className="hidden w-60 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col"> 
             {/* Brand */}
             <div className="flex h-20 items-center px-6">
                 <div className="flex items-center gap-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">
-                        N
-                    </div>
+                    <img
+                        src="/images/nexora-logo.png"
+                        alt="Nexora logo"
+                        className="h-10 w-10 shrink-0 object-contain"
+                    />
 
                     <span className="text-lg font-bold tracking-[0.16em] text-slate-900">
                         NEXORA
@@ -184,13 +205,24 @@ const Sidebar = () => {
                     })}
                 </div>
             </nav>
-
-            {/* User Mini Profile */}
+            
+            {/* User Mini Profile and Logout */}
             <div className="border-t border-slate-200 p-4">
-                <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700">
-                        {userInitial}
-                    </div>
+                <NavLink
+                    to="/profile"
+                    className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 transition hover:bg-slate-100"
+                >
+                    {profilePicUrl ? (
+                        <img
+                            src={profilePicUrl}
+                            alt={`${userName}'s profile`}
+                            className="h-10 w-10 shrink-0 rounded-full object-cover"
+                        />
+                    ) : (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700">
+                            {userInitial}
+                        </div>
+                    )}
 
                     <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-900">
@@ -201,7 +233,20 @@ const Sidebar = () => {
                             View profile
                         </p>
                     </div>
-                </div>
+                </NavLink>
+
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="mt-3 flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    <LogOut size={18} strokeWidth={2} />
+
+                    <span>
+                        {isLoggingOut ? "Logging out..." : "Logout"}
+                    </span>
+                </button>
             </div>
         </aside>
     );

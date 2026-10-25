@@ -36,7 +36,6 @@ export const getAdminReports = ({
     return adminFetch(`/admin/reports?${params.toString()}`);
 };
 
-
 export const updateAdminReport = ({
     reportId,
     status,
@@ -54,4 +53,15 @@ export const updateAdminReport = ({
             }),
         }
     );
+};
+
+export const getAdminReportEvidence = async ({
+    reportId,
+    evidenceIndex,
+}) => {
+    const result = await adminFetch(
+        `/admin/reports/${encodeURIComponent(reportId)}/evidence/${evidenceIndex}`
+    );
+
+    return result.data.evidence;
 };

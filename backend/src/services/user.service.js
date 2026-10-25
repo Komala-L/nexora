@@ -61,10 +61,6 @@ export const getCurrentUser = async (userId) => {
 export const updateProfile = async (userId, updateData) => {
     const updates = {};
 
-    /*
-     * BASIC PROFILE FIELDS
-     */
-
     for (const field of [
         "name",
         "bio",
@@ -75,10 +71,6 @@ export const updateProfile = async (userId, updateData) => {
             updates[field] = updateData[field];
         }
     }
-
-    /*
-     * PROFESSIONAL DETAILS
-     */
 
     if (updateData.professional !== undefined) {
         for (const field of [
@@ -97,10 +89,6 @@ export const updateProfile = async (userId, updateData) => {
         }
     }
 
-    /*
-     * LEARNING DETAILS
-     */
-
     if (updateData.learning !== undefined) {
         for (const field of [
             "subjects",
@@ -116,10 +104,6 @@ export const updateProfile = async (userId, updateData) => {
         }
     }
 
-    /*
-     * FETCH CURRENT USER
-     */
-
     const existingUser = await User.findById(userId);
 
     if (!existingUser) {
@@ -128,10 +112,6 @@ export const updateProfile = async (userId, updateData) => {
             "User not found."
         );
     }
-
-    /*
-     * DETERMINE THE RESULTING PROFILE STATE
-     */
 
     const resultingName =
         updates.name !== undefined
@@ -151,10 +131,6 @@ export const updateProfile = async (userId, updateData) => {
                 resultingDiscoveryPreferences,
         });
 
-    /*
-     * PROFILE VERSION STATE
-     */
-
     if (profileIsComplete) {
         updates.profileCompleted = true;
         updates.profileVersion =
@@ -163,10 +139,6 @@ export const updateProfile = async (userId, updateData) => {
         updates.profileCompleted = false;
         updates.profileVersion = 0;
     }
-
-    /*
-     * SAVE PROFILE
-     */
 
     const user = await User.findByIdAndUpdate(
         userId,
@@ -567,38 +539,26 @@ const addConnectionStatus = async (
 };
 
 /**
- * Discover users based on discovery category.
+ * Discover users based on discovery category with pagination.
  */
 export const discoverUsers = async (
     userId,
     type,
-    limit = 10,
-    radius = 10
+    limit = 9,
+    radius = 10,
+    page = 1
 ) => {
-    const currentUser =
-        await User.findById(userId)
-            .select(
-                "discoveryLocation interests discoveryPreferences"
-            );
+    const currentUser = await User.findById(userId)
+        .select("discoveryLocation interests discoveryPreferences");
 
     if (!currentUser) {
-        throw new ApiError(
-            404,
-            "User not found."
-        );
+        throw new ApiError(404, "User not found.");
     }
 
     if (
         !currentUser.discoveryLocation ||
-        !Array.isArray(
-            currentUser
-                .discoveryLocation
-                .coordinates
-        ) ||
-        currentUser
-            .discoveryLocation
-            .coordinates
-            .length !== 2
+        !Array.isArray(currentUser.discoveryLocation.coordinates) ||
+        currentUser.discoveryLocation.coordinates.length !== 2
     ) {
         throw new ApiError(
             400,
@@ -606,17 +566,11 @@ export const discoverUsers = async (
         );
     }
 
-    const MAX_DISCOVERY_RADIUS_METERS =
-        radius * 1000;
+    const MAX_DISCOVERY_RADIUS_METERS = radius * 1000;
 
     const baseFilter = {
-        _id: {
-            $ne: userId,
-        },
-
-        isDiscoverable: {
-            $ne: false,
-        },
+        _id: { $ne: userId },
+        isDiscoverable: { $ne: false },
     };
 
     const locationFilter = {
@@ -624,14 +578,9 @@ export const discoverUsers = async (
             $near: {
                 $geometry: {
                     type: "Point",
-                    coordinates:
-                        currentUser
-                            .discoveryLocation
-                            .coordinates,
+                    coordinates: currentUser.discoveryLocation.coordinates,
                 },
-
-                $maxDistance:
-                    MAX_DISCOVERY_RADIUS_METERS,
+                $maxDistance: MAX_DISCOVERY_RADIUS_METERS,
             },
         },
     };
@@ -644,34 +593,31 @@ export const discoverUsers = async (
 
         case "friends":
             categoryFilter = {
-                discoveryPreferences:
-                    "friends",
+                discoveryPreferences: "friends",
             };
             break;
 
         case "professional":
             categoryFilter = {
-                discoveryPreferences:
-                    "professional",
+                discoveryPreferences: "professional",
             };
             break;
 
         case "learning":
             categoryFilter = {
-                discoveryPreferences:
-                    "learning",
+                discoveryPreferences: "learning",
             };
             break;
 
         case "interests":
             if (
-                !Array.isArray(
-                    currentUser.interests
-                ) ||
-                currentUser.interests
-                    .length === 0
+                !Array.isArray(currentUser.interests) ||
+                currentUser.interests.length === 0
             ) {
-                return [];
+                return {
+                    users: [],
+                    hasMore: false,
+                };
             }
 
             categoryFilter = {
@@ -682,28 +628,35 @@ export const discoverUsers = async (
             break;
 
         default:
-            throw new ApiError(
-                400,
-                "Invalid discovery type."
-            );
+            throw new ApiError(400, "Invalid discovery type.");
     }
 
-    const users =
-        await User.find({
-            ...baseFilter,
-            ...locationFilter,
-            ...categoryFilter,
-        })
-            .select(
-                "name gender profilePic bio interests discoveryPreferences professional learning"
-            )
-            .limit(limit)
-            .lean();
+    const skip = (page - 1) * limit;
 
-    return addConnectionStatus(
+    const fetchedUsers = await User.find({
+        ...baseFilter,
+        ...locationFilter,
+        ...categoryFilter,
+    })
+        .select(
+            "name gender profilePic bio interests discoveryPreferences professional learning"
+        )
+        .skip(skip)
+        .limit(limit + 1)
+        .lean();
+
+    const hasMore = fetchedUsers.length > limit;
+    const users = fetchedUsers.slice(0, limit);
+
+    const usersWithConnectionStatus = await addConnectionStatus(
         userId,
         users
     );
+
+    return {
+        users: usersWithConnectionStatus,
+        hasMore,
+    };
 };
 
 /**

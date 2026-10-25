@@ -3,6 +3,10 @@ import {
     updateAdminReport,
 } from "../../services/admin/adminReport.service.js";
 
+import {
+    getReportEvidence,
+} from "../../services/admin/adminReport.service.js";
+
 const getAdminReportsController = async (req, res, next) => {
     try {
         const result = await getAdminReports({
@@ -44,7 +48,30 @@ const updateAdminReportController = async (req, res, next) => {
     }
 };
 
+const getAdminReportEvidenceController = async (
+    req,
+    res,
+    next
+) => {
+    try {
+        const evidence = await getReportEvidence({
+            reportId: req.params.reportId,
+            evidenceIndex: req.params.evidenceIndex,
+        });
+
+        return res.status(200).json({
+            success: true,
+            statusCode: 200,
+            message: "Report evidence retrieved successfully.",
+            data: { evidence },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export {
     getAdminReportsController,
     updateAdminReportController,
+    getAdminReportEvidenceController,
 };

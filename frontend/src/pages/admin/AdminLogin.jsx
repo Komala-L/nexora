@@ -66,7 +66,11 @@ const AdminLogin = () => {
             <section className="relative w-full max-w-md">
                 <div className="mb-8 text-center">
                     <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-indigo-400/30 bg-indigo-500/15 text-2xl font-bold text-indigo-300 shadow-lg shadow-indigo-950/30">
-                        N
+                        <img
+                            src="/images/nexora-logo.png"
+                            alt="Nexora logo"
+                            className="h-10 w-10 shrink-0 object-contain"
+                        />
                     </div>
 
                     <p className="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-300">
@@ -182,7 +186,6 @@ const AdminLogin = () => {
                             </div>
                         </div>
 
-
                         {error && (
                             <div
                                 role="alert"
@@ -206,6 +209,17 @@ const AdminLogin = () => {
                                 "Sign in to Admin Portal"
                             )}
                         </button>
+
+                        <p className="mt-5 text-center text-sm text-slate-400">
+                            Not an administrator?{" "}
+                            <button
+                                type="button"
+                                onClick={() => navigate("/login")}
+                                className="font-semibold text-indigo-300 transition hover:text-cyan-300"
+                            >
+                                Back to User Login
+                            </button>
+                        </p>
                     </form>
 
                     <div className="mt-6 border-t border-white/10 pt-5">

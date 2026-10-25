@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 import Report from "../../models/report.model.js";
+import {
+    getReportEvidenceUrl,
+} from "../cloudinary.service.js";
 
 const getAdminReports = async ({
     page = 1,
@@ -314,7 +317,67 @@ const updateAdminReport = async ({
         .lean();
 };
 
+
+const getReportEvidence = async ({
+    reportId,
+    evidenceIndex,
+}) => {
+    const fail = (statusCode, message) => {
+        const error = new Error(message);
+        error.statusCode = statusCode;
+        return error;
+    };
+
+    if (!mongoose.isValidObjectId(reportId)) {
+        throw fail(400, "Invalid report ID.");
+    }
+
+    const indexValue = String(evidenceIndex);
+
+    if (!/^(0|[1-2])$/.test(indexValue)) {
+        throw fail(400, "Invalid evidence index.");
+    }
+
+    const report = await Report.findById(reportId)
+        .select("evidence")
+        .lean();
+
+    if (!report) {
+        throw fail(404, "Report not found.");
+    }
+
+    const evidence = report.evidence?.[Number(indexValue)];
+
+    if (!evidence?.publicId) {
+        throw fail(404, "Report evidence not found.");
+    }
+
+    try {
+        const url = await getReportEvidenceUrl(
+            evidence.publicId
+        );
+
+        return {
+            url,
+            format: evidence.format,
+            bytes: evidence.bytes,
+            width: evidence.width,
+            height: evidence.height,
+        };
+    } catch (error) {
+        if (error.statusCode) {
+            throw error;
+        }
+
+        throw fail(
+            502,
+            "Unable to retrieve report evidence."
+        );
+    }
+};
+
 export {
     getAdminReports,
     updateAdminReport,
+    getReportEvidence,
 };

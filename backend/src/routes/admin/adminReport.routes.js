@@ -5,6 +5,10 @@ import {
     updateAdminReportController,
 } from "../../controllers/admin/adminReport.controller.js";
 
+import {
+    getAdminReportEvidenceController,
+} from "../../controllers/admin/adminReport.controller.js";
+
 import { adminAuthMiddleware } from "../../middleware/adminAuth.middleware.js";
 
 const router = Router();
@@ -14,5 +18,8 @@ router.get("/", adminAuthMiddleware, getAdminReportsController);
 
 // PATCH /api/v1/admin/reports/:reportId
 router.patch("/:reportId", adminAuthMiddleware, updateAdminReportController);
+
+// GET /api/v1/admin/reports/:reportId/evidence/:evidenceIndex
+router.get("/:reportId/evidence/:evidenceIndex",adminAuthMiddleware,getAdminReportEvidenceController);
 
 export default router;

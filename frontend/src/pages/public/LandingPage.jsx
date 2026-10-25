@@ -77,7 +77,11 @@ function Navbar() {
                     onClick={closeMenu}
                 >
                     <span className="brand-mark">
-                        <Compass size={23} strokeWidth={1.8} />
+                        <img
+                            src="/images/nexora-logo.png"
+                            alt=""
+                            className="brand-logo-image"
+                        />
                     </span>
                     <span>NEXORA<span className="brand-period">.</span></span>
                 </Link>
@@ -375,7 +379,11 @@ function LandingPage() {
             <footer className="landing-footer">
                 <Link to="/" className="landing-brand">
                     <span className="brand-mark">
-                        <Compass size={21} />
+                        <img
+                            src="/images/nexora-logo.png"
+                            alt=""
+                            className="brand-logo-image"
+                        />
                     </span>
                     <span>NEXORA<span className="brand-period">.</span></span>
                 </Link>
@@ -385,11 +393,25 @@ function LandingPage() {
                 <div className="footer-links">
                     <Link to="/login">Log in</Link>
                     <Link to="/register">Create account</Link>
+                    <Link to="/privacy-policy">Privacy Policy</Link>
+                    <Link to="/terms-of-service">Terms of Service</Link>
                 </div>
 
                 <span className="footer-copyright">
                     © {new Date().getFullYear()} Nexora
                 </span>
+                
+                <p className="footer-developer-credit">
+                    Developed by{" "}
+                    <a
+                        href="https://www.linkedin.com/in/komala-l-dev/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Komala L on LinkedIn (opens in a new tab)"
+                    >
+                        Komala L
+                    </a>
+                </p>
             </footer>
         </main>
     );

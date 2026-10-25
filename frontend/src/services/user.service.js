@@ -22,13 +22,15 @@ export const getNearbyUsers = async (limit = 10) => {
 
 export const discoverUsers = async (
     type,
-    limit = 10,
-    radius = 10
+    limit = 9,
+    radius = 10,
+    page = 1
 ) => {
     const params = new URLSearchParams({
         type,
         limit: String(limit),
         radius: String(radius),
+        page: String(page),
     });
 
     const response = await fetch(
@@ -240,19 +242,27 @@ export const searchUsers = async (
     return data;
 };
 
-export const reportUser = async (userId, reason, description = "") => {
+export const reportUser = async (
+    userId,
+    reason,
+    description = "",
+    evidenceFiles = []
+) => {
+    const formData = new FormData();
+
+    formData.append("reason", reason);
+    formData.append("description", description);
+
+    evidenceFiles.forEach((file) => {
+        formData.append("evidence", file);
+    });
+
     const response = await fetch(
         `${API_BASE_URL}/users/${userId}/report`,
         {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
             credentials: "include",
-            body: JSON.stringify({
-                reason,
-                description,
-            }),
+            body: formData,
         }
     );
 

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import AdminLayout from "../../components/admin/AdminLayout";
 import {
     getAdminSettings,
     updateAdminSettings,
@@ -123,8 +122,8 @@ const AdminSettings = () => {
     );
 
     return (
-        <AdminLayout title="Settings">
-            <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
+        <>
+            <div className="w-full p-5 sm:p-6 lg:p-8 space-y-6">
                 <div>
                     <p className="text-sm text-slate-500">
                         Configure your platform and administrative preferences.
@@ -285,7 +284,7 @@ const AdminSettings = () => {
                     </form>
                 )}
             </div>
-        </AdminLayout>
+        </>
     );
 };
 

@@ -43,19 +43,10 @@ const ProfileCompletionGate = () => {
         setUser,
     } = useAuth();
 
-    /*
-     * Profile onboarding skip state
-     */
     const [skipped, setSkipped] = useState(false);
 
-    /*
-     * Location setup skip state
-     */
     const [locationSkipped, setLocationSkipped] = useState(false);
 
-    /*
-     * Restore profile onboarding skip preference.
-     */
     useEffect(() => {
         if (!user) {
             setSkipped(false);
@@ -82,9 +73,6 @@ const ProfileCompletionGate = () => {
         }
     }, [user]);
 
-    /*
-     * Restore location setup skip preference.
-     */
     useEffect(() => {
         if (!user) {
             setLocationSkipped(false);
@@ -109,9 +97,6 @@ const ProfileCompletionGate = () => {
         }
     }, [user]);
 
-    /*
-     * Loading state
-     */
     if (isLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-white">
@@ -125,9 +110,6 @@ const ProfileCompletionGate = () => {
         );
     }
 
-    /*
-     * User is not authenticated.
-     */
     if (!user) {
         return (
             <Navigate
@@ -137,14 +119,7 @@ const ProfileCompletionGate = () => {
         );
     }
 
-    /*
-     * STEP 1 — PROFILE COMPLETION
-     */
-
     if (needsProfileCompletion(user)) {
-        /*
-         * If the user previously selected "Maybe later", allow access.
-         */
         if (skipped) {
             return <Outlet />;
         }
@@ -174,23 +149,31 @@ const ProfileCompletionGate = () => {
                 }}
 
                 onSkip={(updatedUser) => {
+                    const userToUse = updatedUser || user;
+                    const storageKey = getSkipStorageKey(userToUse);
+
                     if (updatedUser) {
                         setUser(updatedUser);
                     }
+
+                    if (storageKey) {
+                        try {
+                            localStorage.setItem(storageKey, "true");
+                        } catch (error) {
+                            console.error(
+                                "Failed to save profile onboarding skip state:",
+                                error
+                            );
+                        }
+                    }
+
                     setSkipped(true);
                 }}
             />
         );
     }
 
-    /*
-     * STEP 2 — LOCATION SETUP
-     */
-
     if (!hasLocation(user)) {
-        /*
-         * User selected "Maybe later".
-         */
         if (locationSkipped) {
             return <Outlet />;
         }
@@ -198,9 +181,6 @@ const ProfileCompletionGate = () => {
         return (
             <LocationSetup
                 user={user}
-                /*
-                 * Location successfully enabled.
-                 */
                 onCompleted={(updatedUser) => {
                     const key = getLocationSkipKey(user);
 
@@ -221,9 +201,6 @@ const ProfileCompletionGate = () => {
                     setUser(updatedUser);
                 }}
 
-                /*
-                 * User selected "Maybe later".
-                 */
                 onSkip={() => {
                     const key =
                         getLocationSkipKey(user);
@@ -247,9 +224,6 @@ const ProfileCompletionGate = () => {
         );
     }
 
-    /*
-     * STEP 3 — EVERYTHING COMPLETE
-     */
     return <Outlet />;
 };
 

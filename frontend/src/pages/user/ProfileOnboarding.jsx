@@ -361,45 +361,15 @@ const ProfileOnboarding = ({ user, onCompleted, onSkip }) => {
         }
     };
 
-    const handleSkip = async () => {
-    if (isSaving) {
-        return;
-    }
-
-    try {
-        setIsSaving(true);
-        setError("");
-
-        // Save whatever information the user has entered so far.
-        const response = await updateProfile(formData);
-
-        const updatedUser = response.data?.user;
-
-        if (!updatedUser) {
-            throw new Error(
-                "Your progress was saved, but the updated profile could not be retrieved."
-            );
+    const handleSkip = () => {
+        if (isSaving) {
+            return;
         }
 
-        // Pass the updated user back to the gate.
-        onSkip?.(updatedUser);
-    } catch (error) {
-        console.error(
-            "Failed to save profile progress:",
-            error
-        );
+        setError("");
 
-        setError(
-            error.message ||
-                "Could not save your profile progress. Please try again."
-        );
-    } finally {
-        setIsSaving(false);
-    }
-};
-
-
-
+        onSkip?.(user);
+    };
 
     /* ---------------------------------------------------------
        COMPLETE PROFILE

@@ -25,6 +25,7 @@ const Topbar = () => {
 
     const userName = user?.name || "User";
     const userInitial = userName.charAt(0).toUpperCase();
+    const profilePicUrl = user?.profilePic?.url;
 
     const fetchUnreadCount = async () => {
         try {
@@ -188,11 +189,11 @@ const Topbar = () => {
     };
 
     return (
-        <header className="flex h-20 items-center gap-4 border-b border-slate-200 bg-white px-4 sm:px-6">
+        <header className="flex h-20 w-full items-center gap-4 border-b border-slate-200 bg-white px-5 sm:px-7">
             {/* Search */}
             <div
                 ref={searchContainerRef}
-                className="relative max-w-xl flex-1"
+                className="relative min-w-0 flex-1"
             >
                 <Search
                     size={18}
@@ -341,7 +342,7 @@ const Topbar = () => {
             {/* Location */}
             <button
                 type="button"
-                className="hidden items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 sm:flex"
+                className="hidden shrink-0 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 sm:flex"
             >
                 <MapPin
                     size={16}
@@ -377,10 +378,19 @@ const Topbar = () => {
             {/* User Avatar */}
             <button
                 type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700"
+                onClick={() => navigate("/profile")}
+                className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo-100 font-semibold text-indigo-700"
                 aria-label={`Open ${userName} profile`}
             >
-                {userInitial}
+                {profilePicUrl ? (
+                    <img
+                        src={profilePicUrl}
+                        alt={`${userName}'s profile`}
+                        className="h-full w-full rounded-full object-cover"
+                    />
+                ) : (
+                    userInitial
+                )}
             </button>
         </header>
     );

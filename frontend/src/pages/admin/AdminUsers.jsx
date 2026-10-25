@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import AdminLayout from "../../components/admin/AdminLayout";
 import { getAdminUsers, getAdminUserById } from "../../services/adminUser.service";
 
 const PAGE_SIZE = 10;
@@ -136,9 +135,9 @@ const AdminUsers = () => {
     }, [page, search, reloadKey]);
 
     return (
-        <AdminLayout title="User Management">
+        <>
             {profileLoading || profileError || selectedUser ? (
-                <div className="mx-auto max-w-[1500px] p-5 sm:p-8">
+                <div className="w-full p-5 sm:p-6 lg:p-8">
                     <button
                         type="button"
                         onClick={handleCloseProfile}
@@ -274,7 +273,7 @@ const AdminUsers = () => {
                     )}
                 </div>
             ) : (
-                <div className="mx-auto max-w-[1500px] p-5 sm:p-8">
+                <div className="w-full p-5 sm:p-6 lg:p-8">
                     <div className="mb-7">
                         <p className="text-sm font-semibold text-indigo-600">
                             COMMUNITY
@@ -490,7 +489,7 @@ const AdminUsers = () => {
                     </p>
                 </div>
             )}
-        </AdminLayout>
+        </>
     );
 };
 
