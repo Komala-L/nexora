@@ -350,12 +350,19 @@ const Register = () => {
 
                                     <button
                                         type="button"
-                                        onClick={() => setShowPassword((previous) => !previous)}
-                                        aria-label={showPassword ? "Hide password" : "Show password"}
-                                        aria-pressed={showPassword}
+                                        onClick={() =>
+                                            setShowConfirmPassword((previous) => !previous)
+                                        }
+                                        aria-label={
+                                            showConfirmPassword
+                                                ? "Hide confirm password"
+                                                : "Show confirm password"
+                                        }
+                                        aria-pressed={showConfirmPassword}
                                         className="absolute inset-y-0 right-0 flex items-center justify-center px-4 text-slate-400 transition hover:text-indigo-300 focus:outline-none focus:text-indigo-300"
                                     >
-                                        {showPassword ? (
+                                        {showConfirmPassword ? (
+                                            // Eye with a slash: confirm password is visible
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 width="20"
@@ -374,7 +381,7 @@ const Register = () => {
                                                 <path d="M6.6 6.6C4.1 8.2 3 12 3 12s3.5 7 9 7a10 10 0 004.1-.9" />
                                             </svg>
                                         ) : (
-                                            // Eye: password is hidden
+                                            // Eye: confirm password is hidden
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 width="20"

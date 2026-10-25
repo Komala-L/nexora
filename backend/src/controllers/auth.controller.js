@@ -19,6 +19,13 @@ export const registerUser = asyncHandler(async (req, res) => {
         key: "global",
     });
 
+    if (adminSettings?.maintenanceMode === true) {
+        throw new ApiError(
+            503,
+            "Nexora is currently undergoing scheduled maintenance. Please try again later."
+        );
+    }
+
     if (adminSettings?.allowRegistration === false) {
         throw new ApiError(
             403,
@@ -72,53 +79,41 @@ export const registerUser = asyncHandler(async (req, res) => {
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
-    const {
-        email,
-        password,
-    } = req.body;
+    const { email, password } = req.body;
 
-    const existingUser =
-        await User.findOne({ email })
-            .select("+password");
+    // Check global platform settings
+    const adminSettings = await AdminSettings.findOne({
+        key: "global",
+    });
+
+    // Block login during maintenance
+    if (adminSettings?.maintenanceMode === true) {
+        throw new ApiError(
+            503,
+            "Nexora is currently undergoing scheduled maintenance. Please try again later."
+        );
+    }
+
+    const existingUser = await User.findOne({ email })
+        .select("+password");
 
     if (!existingUser) {
-        throw new ApiError(
-            401,
-            "Invalid credentials"
-        );
+        throw new ApiError(401, "Invalid credentials");
     }
 
     const isPasswordValid =
-        await existingUser.comparePassword(
-            password
-        );
+        await existingUser.comparePassword(password);
 
     if (!isPasswordValid) {
-        throw new ApiError(
-            401,
-            "Invalid credentials"
-        );
+        throw new ApiError(401, "Invalid credentials");
     }
 
-    const {
-        accessToken,
-        refreshToken,
-    } =
-        await generateAccessAndRefreshTokens(
-            existingUser._id
-        );
+    const { accessToken, refreshToken } =
+        await generateAccessAndRefreshTokens(existingUser._id);
 
     return res
-        .cookie(
-            "accessToken",
-            accessToken,
-            cookieOptions
-        )
-        .cookie(
-            "refreshToken",
-            refreshToken,
-            cookieOptions
-        )
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
         .status(200)
         .json(
             new ApiResponse(
