@@ -1,0 +1,30 @@
+
+# Use Node.js 22 Alpine for a lightweight production image
+FROM node:22-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package configuration
+COPY package*.json ./
+
+# Install production dependencies only
+RUN npm install --omit=dev --no-audit --no-fund
+
+# Copy backend source code
+COPY . .
+
+# Create logs directory and configure permissions
+RUN mkdir -p logs && chown -R node:node /app
+
+# Run as non-root user
+USER node
+
+# Set production environment
+ENV NODE_ENV=production
+
+# Expose backend port
+EXPOSE 5000
+
+# Start backend server
+CMD ["npm", "start"]
