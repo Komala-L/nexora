@@ -16,6 +16,8 @@ Nexora helps users discover nearby people through geographical proximity, shared
 - [API Request Flow](#-api-request-flow)
 - [Connection and Messaging Sequence](#-connection-and-messaging-sequence)
 - [Project Structure](#-project-structure)
+- [Dockerization](#-dockerization)
+- [Deployment](#-deployment)
 - [Installation](#-installation)
 - [API Documentation](#-api-documentation)
 - [Real-Time Messaging](#-real-time-messaging)
@@ -107,19 +109,21 @@ Users can explore profiles based on proximity and shared interests, send connect
 
 ## 🛠 Tech Stack
 
-| Category          | Technologies                                | Responsibility                              |
-| ----------------- | ------------------------------------------- | ------------------------------------------- |
-| Frontend          | React, JavaScript, HTML, CSS, Tailwind CSS | User interface and application interactions |
-| Backend           | Node.js, Express.js                         | REST APIs and server-side execution         |
-| Database          | MongoDB, Mongoose                           | Document persistence and data modelling     |
-| Geospatial        | GeoJSON, `2dsphere`, `$nearSphere`          | Indexed proximity discovery                 |
-| Authentication    | JWT, HTTP-only cookies                      | Authentication and session lifecycle        |
-| Password security | bcrypt                                      | Password hashing                            |
-| Validation        | Zod                                         | Runtime request validation                  |
-| Real-time         | Socket.IO                                   | Bidirectional message communication         |
-| Logging           | Winston                                     | Application logs and diagnostics            |
-| File handling     | Multer, Cloudinary                          | Upload processing and media storage         |
-| Development       | Git, GitHub, Postman                        | Version control and API testing             |
+| Category          | Technologies                                | Responsibility                                          |
+| ----------------- | ------------------------------------------- | ------------------------------------------------------- |
+| Frontend          | React, JavaScript, HTML, CSS, Tailwind CSS  | User interface and application interactions             |
+| Backend           | Node.js, Express.js                         | REST APIs and server-side execution                     |
+| Database          | MongoDB, Mongoose                           | Document persistence and data modelling                 |
+| Geospatial        | GeoJSON, `2dsphere`, `$nearSphere`          | Indexed proximity discovery                             |
+| Authentication    | JWT, HTTP-only cookies                      | Authentication and session lifecycle                    |
+| Password security | bcrypt                                      | Password hashing                                        |
+| Validation        | Zod                                         | Runtime request validation                              |
+| Real-time         | Socket.IO                                   | Bidirectional message communication                     | 
+| Logging           | Winston                                     | Application logs and diagnostics                        |
+| File handling     | Multer, Cloudinary                          | Upload processing and media storage                     |
+| Development       | Git, GitHub, Postman                        | Version control and API testing                         |
+| Containerization  | Docker, Docker Compose                      | Application containerization and service orchestration  |
+| Web Server        | Nginx                                       | Serving the production React frontend                   |
 
 ---
 
@@ -237,6 +241,9 @@ This sequence illustrates Nexora's connection-request lifecycle, request accepta
 ```text
 nexora/
 ├── backend/
+│   ├── Dockerfile
+│   └── .dockerignore
+|
 │   ├── docs/
 │   │   ├── admin-management/
 │   │   ├── authentication/
@@ -359,6 +366,10 @@ nexora/
 │       └── nexora-database-eer.png
 │
 ├── frontend/
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   └── nginx.conf
+|
 │   ├── public/                         # Public static assets
 │   ├── src/
 │   │   ├── components/
@@ -441,7 +452,7 @@ nexora/
 │   │   ├── package-lock.json
 │   │   ├── README.md
 │   │   └── vite.config.js
-│   │
+|
 ├── screenshots/
 │   ├── admin-dashboard.png
 │   ├── admin-reports.png
@@ -465,6 +476,133 @@ Responsible for authentication, data validation, geospatial discovery, connectio
 ### Frontend
 
 Responsible for user registration and login, discovery pages, profiles, connection management, messaging, and the administrative interface.
+
+---
+
+## 🐳 Dockerization
+
+Nexora is containerized using Docker to provide a consistent and reproducible local application environment.
+
+### Docker Architecture
+
+The application uses separate containers for the frontend and backend, orchestrated using Docker Compose.
+
+| Service | Technology | Container Port | Host Port |
+|---|---|---:|---:|
+| Frontend | React + Nginx | 80 | 8080 |
+| Backend | Node.js + Express.js | 5000 | 5000 |
+
+MongoDB and Cloudinary remain external services and are accessed through environment configuration.
+
+### Docker Implementation
+
+- Created separate Dockerfiles for the frontend and backend.
+- Used a multi-stage frontend build with Node.js and Nginx.
+- Configured Nginx to support React Router navigation and page refreshes.
+- Used Docker Compose to build and manage both application services.
+- Configured environment variables and port mappings.
+- Added `.dockerignore` files to exclude unnecessary files and sensitive environment files from Docker build contexts.
+- Configured container restart policies.
+
+### Prerequisites
+
+- Docker Desktop
+- Docker Compose
+- A configured backend environment file (`backend/.env`)
+- Accessible MongoDB and Cloudinary services
+
+### Run Nexora Using Docker
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Komala-L/nexora.git
+cd nexora
+```
+
+Configure the backend environment variables in `backend/.env`.
+
+Build and start the containers:
+
+```bash
+docker compose up -d --build
+```
+
+Check container status:
+
+```bash
+docker compose ps
+```
+
+### Access the Application
+
+- Frontend: http://localhost:8080
+- Backend: http://localhost:5000
+
+### Docker Management Commands
+
+```bash
+# Start containers
+docker compose up -d
+
+# View running containers
+docker compose ps
+
+# View backend logs
+docker compose logs -f backend
+
+# View frontend logs
+docker compose logs -f frontend
+
+# Rebuild containers after code changes
+docker compose up -d --build
+
+# Stop and remove containers
+docker compose down
+```
+
+### Container Verification
+
+The Dockerized application was tested locally to verify:
+
+- Frontend and backend container startup.
+- MongoDB connectivity.
+- User authentication and session persistence.
+- Dashboard and profile functionality.
+- Location-based discovery.
+- Connection management.
+- Real-time messaging, including sending and receiving messages.
+
+The application was verified through its core user workflows in the local Docker environment.
+
+---
+
+## 🚀 Deployment
+
+Nexora supports cloud deployment and local containerized execution.
+
+### Cloud Deployment
+
+The production application is deployed using:
+
+| Component | Platform |
+|---|---|
+| Frontend | Vercel |
+| Backend | Render |
+| Database | MongoDB |
+| Media Storage | Cloudinary |
+
+**Live Application:** https://nexora-delta-ochre.vercel.app/
+
+**Backend Service:** https://nexora-backend-iboh.onrender.com
+
+Production environment variables are configured through the respective deployment platform dashboards. Sensitive credentials are not stored in the repository.
+
+### Local Containerized Deployment
+
+For local execution, the frontend and backend are containerized separately and managed using Docker Compose.
+
+Refer to the [Dockerization](#dockerization) section for setup instructions and commands.
 
 ---
 
@@ -500,13 +638,13 @@ NODE_ENV=development
 PORT=5000
 CLIENT_URL=http://localhost:5173
 
-MONGO_URI=mongodb://localhost:27017/nexora
+MMONGODB_URI=mongodb://localhost:27017/nexora
 
-ACCESS_TOKEN_SECRET=your_32_char_access_secret_change_me
-REFRESH_TOKEN_SECRET=your_32_char_refresh_secret_change_me
+JWT_SECRET=your_32_char_access_secret_change_me
+JWT_REFRESH_SECRET=your_32_char_refresh_secret_change_me
 
-ACCESS_TOKEN_EXPIRY=15m
-REFRESH_TOKEN_EXPIRY=7d
+JWT_ACCESS_TOKEN_EXPIRY=1d
+JWT_REFRESH_TOKEN_EXPIRY=7d
 ```
 
 Use unique, randomly generated secrets for local development. Never use the example secrets in a deployed environment.
@@ -533,7 +671,7 @@ npm install
 Create `frontend/.env`:
 
 ```dotenv
-VITE_API_BASE_URL=http://localhost:5000/api/v1
+VITE_API_BASE_URL=http://localhost:5000
 ```
 
 Configure the frontend API service to use this base URL.
@@ -562,17 +700,17 @@ http://localhost:5173
 
 ### Environment Variable Reference
 
-| Variable               | Purpose                      |
-| ---------------------- | ---------------------------- |
-| `NODE_ENV`             | Runtime environment          |
-| `PORT`                 | Backend listening port       |
-| `CLIENT_URL`           | Frontend origin              |
-| `MONGO_URI`            | MongoDB connection string    |
-| `ACCESS_TOKEN_SECRET`  | Access-token signing secret  |
-| `REFRESH_TOKEN_SECRET` | Refresh-token signing secret |
-| `ACCESS_TOKEN_EXPIRY`  | Access-token lifetime        |
-| `REFRESH_TOKEN_EXPIRY` | Refresh-token lifetime       |
-| `VITE_API_BASE_URL`    | Frontend API base URL        |
+| Variable                   | Purpose                      |
+| -------------------------- | ---------------------------- |
+| `NODE_ENV`                 | Runtime environment          |
+| `PORT`                     | Backend listening port       |
+| `CLIENT_URL`               | Frontend origin              |
+| `MONGODB_URI`              | MongoDB connection string    |
+| `JWT_SECRET`               | Access-token signing secret  |
+| `JWT_REFRESH_SECRET`       | Refresh-token signing secret |
+| `JWT_ACCESS_TOKEN_EXPIRY`  | Access-token lifetime        |
+| `JWT_REFRESH_TOKEN_EXPIRY` | Refresh-token lifetime       |
+| `VITE_API_BASE_URL`        | Frontend API base URL        |
 
 Never commit real `.env` files or production credentials.
 
@@ -872,6 +1010,12 @@ The main application modules cover:
 - ✅ User management and report-review interface
 - ✅ Application settings and registration controls
 - ✅ Centralized backend error handling
+- ✅ Production frontend deployment using Vercel
+- ✅ Production backend deployment using Render
+- ✅ Dockerized frontend and backend using separate Dockerfiles
+- ✅ Multi-stage frontend build with Nginx
+- ✅ Docker Compose service orchestration
+- ✅ Local Docker application verification
 
 ---
 
